@@ -16,14 +16,18 @@ export const metadata: Metadata = {
   },
 }
 
+const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={`${inter.className} bg-gray-950 text-white antialiased min-h-screen`}>
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en">
+      <body className={`${inter.className} bg-gray-950 text-white antialiased min-h-screen`}>
+        {children}
+      </body>
+    </html>
   )
+
+  if (!hasClerkKey) return content
+
+  return <ClerkProvider>{content}</ClerkProvider>
 }
