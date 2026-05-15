@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  clerkId       String   @unique
+  email         String   @unique
+  name          String?
+  imageUrl      String?
+  plan          Plan     @default(FREE)
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
+  stripePriceId        String?
+  subscriptionStatus   String?  @default("inactive")
+  generationsUsed      Int      @default(0)
+  generationsLimit     Int      @default(3)
+  isBanned             Boolean  @default(false)
+  isAdmin              Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  covers        Cover[]
+  sessions      UserSession[]
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Cover {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title           String
+  subtitle        String?
+  authorName      String
+  genre           String
+  prompt          String      @db.Text
+  enhancedPrompt  String?     @db.Text
+  description     String?     @db.Text
+  authorBio       String?     @db.Text
+  reviewQuote     String?
+
+  trimSize        String
+  pageCount       Int
+  paperType       String
+  coverType       String
+
+  imageUrl        String?
+  pdfUrl          String?
+  previewUrl      String?
+
+  spineWidth      Float?
+  totalWidthIn    Float?
+  totalHeightIn   Float?
+
+  status          CoverStatus @default(PENDING)
+  isFlagged       Boolean     @default(false)
+  flagReason      String?
+
+  generationCostUsd Float?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  exports         Export[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Export {
+  id          String   @id @default(cuid())
+  coverId     String
+  cover       Cover    @relation(fields: [coverId], references: [id], onDelete: Cascade)
+  userId      String
+
+  format      String   // 'pdf' | 'png' | 'jpg'
+  url         String
+  fileSizeBytes Int?
+  downloadCount Int    @default(0)
+
+  createdAt   DateTime @default(now())
+
+  @@index([coverId])
+  @@index([userId])
+}
+
+model UserSession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  deviceId    String
+  ipAddress   String?
+  country     String?
+  userAgent   String?
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([deviceId])
+}
+
+model SupportTicket {
+  id          String        @id @default(cuid())
+  userId      String?
+  email       String
+  subject     String
+  message     String        @db.Text
+  status      TicketStatus  @default(OPEN)
+  adminNotes  String?       @db.Text
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  AGENCY
+}
+
+enum CoverStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
