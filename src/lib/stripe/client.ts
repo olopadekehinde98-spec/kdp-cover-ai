@@ -1,15 +1,32 @@
 import Stripe from 'stripe'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-04-22.dahlia',
-  typescript: true,
+// Lazy singleton — only instantiated on first property access (at request time, not build time)
+let _stripe: Stripe | null = null
+
+function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY environment variable is not set')
+    _stripe = new Stripe(key, {
+      apiVersion: '2026-04-22.dahlia',
+      typescript: true,
+    })
+  }
+  return _stripe
+}
+
+// Proxy so all existing `stripe.x.y` calls work without any changes in consumers
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop: string | symbol) {
+    return getStripe()[prop as keyof Stripe]
+  },
 })
 
 export const PLANS = {
   STARTER: {
     name: 'Starter',
     price: 1900,  // cents
-    priceId: process.env.STRIPE_STARTER_PRICE_ID!,
+    priceId: process.env.STRIPE_STARTER_PRICE_ID ?? '',
     generationsLimit: 15,
     features: [
       '15 covers per month',
@@ -22,7 +39,7 @@ export const PLANS = {
   PRO: {
     name: 'Pro',
     price: 4900,
-    priceId: process.env.STRIPE_PRO_PRICE_ID!,
+    priceId: process.env.STRIPE_PRO_PRICE_ID ?? '',
     generationsLimit: 999999,
     features: [
       'Unlimited covers',
@@ -37,7 +54,7 @@ export const PLANS = {
   AGENCY: {
     name: 'Agency',
     price: 9900,
-    priceId: process.env.STRIPE_AGENCY_PRICE_ID!,
+    priceId: process.env.STRIPE_AGENCY_PRICE_ID ?? '',
     generationsLimit: 999999,
     features: [
       'Everything in Pro',
