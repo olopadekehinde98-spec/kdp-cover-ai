@@ -1,35 +1,56 @@
 import type { GenerationInput, GenerationResult } from './types'
 import { enhancePrompt } from './prompt-enhancer'
 
-const OPENAI_SIZES = ['1024x1024', '1792x1024', '1024x1792'] as const
-
 export async function generateCoverImage(
   input: GenerationInput,
   mode: 'full-wrap' | 'front-only' = 'full-wrap'
 ): Promise<GenerationResult> {
   const enhancedPrompt = enhancePrompt(input, mode === 'full-wrap' ? 'full-wrap' : '2:3')
 
-  // Use Ideogram for best typography-aware generation, fallback to OpenAI
-  const provider = process.env.IDEOGRAM_API_KEY ? 'ideogram' : 'openai'
-
-  if (provider === 'ideogram') {
+  // Priority: Ideogram (paid, best quality) → OpenAI DALL-E 3 (paid) → Pollinations (free, no key needed)
+  if (process.env.IDEOGRAM_API_KEY) {
     return generateWithIdeogram(enhancedPrompt, mode)
   }
-  return generateWithOpenAI(enhancedPrompt, mode)
+  if (process.env.OPENAI_API_KEY) {
+    return generateWithOpenAI(enhancedPrompt, mode)
+  }
+  return generateWithPollinations(enhancedPrompt, mode)
+}
+
+// FREE — no API key required, powered by Stable Diffusion XL
+async function generateWithPollinations(prompt: string, mode: string): Promise<GenerationResult> {
+  const width = mode === 'full-wrap' ? 1792 : 1024
+  const height = mode === 'full-wrap' ? 1024 : 1536
+
+  // Pollinations generates images via a simple URL — completely free
+  const encodedPrompt = encodeURIComponent(prompt)
+  const seed = Math.floor(Math.random() * 999999)
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true`
+
+  // Verify the image actually loads (Pollinations returns 200 with the image directly)
+  const res = await fetch(imageUrl, { method: 'HEAD' })
+  if (!res.ok) throw new Error(`Pollinations error: ${res.status}`)
+
+  return {
+    imageUrl,
+    revisedPrompt: prompt,
+    width,
+    height,
+    provider: 'pollinations',
+  }
 }
 
 async function generateWithOpenAI(prompt: string, mode: string): Promise<GenerationResult> {
   const { default: OpenAI } = await import('openai')
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-  // Full wrap needs wide; front-only needs portrait
   const size = mode === 'full-wrap' ? '1792x1024' : '1024x1792'
 
   const response = await client.images.generate({
     model: 'dall-e-3',
     prompt,
     n: 1,
-    size,
+    size: size as '1792x1024' | '1024x1792',
     quality: 'hd',
     style: 'vivid',
   })
