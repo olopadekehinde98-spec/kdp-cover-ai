@@ -59,32 +59,44 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
       const res = await fetch(input.imageUrl, { signal: controller.signal, redirect: 'follow' })
       clearTimeout(timer)
       if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`)
+      const ct = res.headers.get('content-type') ?? ''
+      if (!ct.includes('image')) {
+        throw new Error('Cover image has expired. Please generate a new cover and export that one.')
+      }
       imageBytes = new Uint8Array(await res.arrayBuffer())
     } catch (e) {
-      throw new Error(`Failed to fetch cover image: ${e}`)
+      throw new Error(e instanceof Error ? e.message : `Failed to fetch cover image: ${e}`)
     }
-    // Convert to JPEG via sharp to handle WebP / unknown formats
+    // Convert any format (WebP, PNG, etc.) to JPEG via sharp
     try {
       const sharp = (await import('sharp')).default
       const jpegBuffer = await sharp(Buffer.from(imageBytes)).jpeg({ quality: 92 }).toBuffer()
       imageBytes = new Uint8Array(jpegBuffer)
     } catch {
-      // sharp unavailable — continue with raw bytes
+      // sharp unavailable — will try raw embed below
     }
   }
 
-  // Detect JPEG by magic bytes (FF D8) — always true for base64 path, reliable for URL path
+  // Detect format by magic bytes
   const isJpeg = imageBytes[0] === 0xFF && imageBytes[1] === 0xD8
+  const isPng  = imageBytes[0] === 0x89 && imageBytes[1] === 0x50
 
   let embeddedImage
-  try {
-    embeddedImage = isJpeg
-      ? await pdfDoc.embedJpg(imageBytes)
-      : await pdfDoc.embedPng(imageBytes)
-  } catch (e) {
-    // Last resort: force-try JPEG then PNG
-    try { embeddedImage = await pdfDoc.embedJpg(imageBytes) }
-    catch { embeddedImage = await pdfDoc.embedPng(imageBytes) }
+  if (isJpeg) {
+    embeddedImage = await pdfDoc.embedJpg(imageBytes)
+  } else if (isPng) {
+    embeddedImage = await pdfDoc.embedPng(imageBytes)
+  } else {
+    // Unknown format — try JPEG first, then PNG
+    try {
+      embeddedImage = await pdfDoc.embedJpg(imageBytes)
+    } catch {
+      try {
+        embeddedImage = await pdfDoc.embedPng(imageBytes)
+      } catch {
+        throw new Error('Image format not supported for PDF. Please generate a new cover and export that one.')
+      }
+    }
   }
 
   // Draw full-wrap image at full page size
