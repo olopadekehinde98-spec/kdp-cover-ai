@@ -9,10 +9,14 @@ export async function generateCoverImage(
 
   // Priority: Ideogram (paid, best quality) → OpenAI gpt-image-1 (paid) → Pollinations (free, no key needed)
   if (process.env.IDEOGRAM_API_KEY) {
-    return generateWithIdeogram(enhancedPrompt, mode)
+    try { return await generateWithIdeogram(enhancedPrompt, mode) } catch (e) {
+      console.warn('Ideogram failed, falling back:', e)
+    }
   }
   if (process.env.OPENAI_API_KEY) {
-    return generateWithOpenAI(enhancedPrompt, mode)
+    try { return await generateWithOpenAI(enhancedPrompt, mode) } catch (e) {
+      console.warn('OpenAI failed, falling back to Pollinations:', e)
+    }
   }
   return generateWithPollinations(enhancedPrompt, mode)
 }

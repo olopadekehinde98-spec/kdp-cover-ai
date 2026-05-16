@@ -90,8 +90,16 @@ export async function POST(req: NextRequest) {
     // Generate AI image
     const imageResult = await generateCoverImage(genInput, 'full-wrap')
 
-    // Auto-generate description if not provided
-    const description = data.description || await generateBookDescription(data.title, data.genre, data.prompt)
+    // Auto-generate description if not provided (wrapped so it never crashes the whole generation)
+    let description = data.description || ''
+    if (!description) {
+      try {
+        description = await generateBookDescription(data.title, data.genre, data.prompt)
+      } catch (e) {
+        console.warn('Book description generation failed, using fallback:', e)
+        description = `A compelling ${data.genre} book that will keep you turning pages.`
+      }
+    }
 
     // Build layouts
     const typography = buildTypographyLayout({
@@ -167,7 +175,8 @@ export async function POST(req: NextRequest) {
       where: { id: cover.id },
       data: { status: 'FAILED' },
     })
-    console.error('Generation error:', err)
-    return NextResponse.json({ error: 'Generation failed. Please try again.' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Generation error:', msg)
+    return NextResponse.json({ error: `Generation failed: ${msg}` }, { status: 500 })
   }
 }
