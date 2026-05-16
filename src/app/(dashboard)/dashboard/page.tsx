@@ -7,6 +7,10 @@ export default async function DashboardPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is not configured. Please add your PostgreSQL connection string in Vercel → Settings → Environment Variables.')
+  }
+
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
     include: {
