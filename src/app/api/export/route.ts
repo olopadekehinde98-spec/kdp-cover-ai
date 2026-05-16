@@ -21,14 +21,6 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  // Free plan — no PDF export
-  if (user.plan === 'FREE') {
-    return NextResponse.json({
-      error: 'PDF export requires a paid plan.',
-      upgradeUrl: '/pricing',
-    }, { status: 403 })
-  }
-
   const cover = await prisma.cover.findFirst({
     where: { id: parsed.data.coverId, userId: user.id },
   })
