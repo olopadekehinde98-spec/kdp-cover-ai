@@ -45,38 +45,47 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
 
   // Embed and draw the AI-generated full-wrap image
   let imageBytes: Uint8Array
-  let contentType = ''
+
+  if (input.imageUrl.startsWith('data:')) {
+    // Stored as base64 — decode directly, no network call needed
+    const base64 = input.imageUrl.split(',')[1]
+    if (!base64) throw new Error('Invalid base64 image data stored in database')
+    imageBytes = new Uint8Array(Buffer.from(base64, 'base64'))
+  } else {
+    // External URL — fetch with timeout and redirect follow
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 25000)
+      const res = await fetch(input.imageUrl, { signal: controller.signal, redirect: 'follow' })
+      clearTimeout(timer)
+      if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`)
+      imageBytes = new Uint8Array(await res.arrayBuffer())
+    } catch (e) {
+      throw new Error(`Failed to fetch cover image: ${e}`)
+    }
+    // Convert to JPEG via sharp to handle WebP / unknown formats
+    try {
+      const sharp = (await import('sharp')).default
+      const jpegBuffer = await sharp(Buffer.from(imageBytes)).jpeg({ quality: 92 }).toBuffer()
+      imageBytes = new Uint8Array(jpegBuffer)
+    } catch {
+      // sharp unavailable — continue with raw bytes
+    }
+  }
+
+  // Detect JPEG by magic bytes (FF D8) — always true for base64 path, reliable for URL path
+  const isJpeg = imageBytes[0] === 0xFF && imageBytes[1] === 0xD8
+
+  let embeddedImage
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
-    const res = await fetch(input.imageUrl, { signal: controller.signal, redirect: 'follow' })
-    clearTimeout(timeout)
-    if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`)
-    contentType = res.headers.get('content-type') ?? ''
-    imageBytes = new Uint8Array(await res.arrayBuffer())
+    embeddedImage = isJpeg
+      ? await pdfDoc.embedJpg(imageBytes)
+      : await pdfDoc.embedPng(imageBytes)
   } catch (e) {
-    throw new Error(`Failed to fetch cover image: ${e}`)
+    // Last resort: force-try JPEG then PNG
+    try { embeddedImage = await pdfDoc.embedJpg(imageBytes) }
+    catch { embeddedImage = await pdfDoc.embedPng(imageBytes) }
   }
-
-  // Normalize to JPEG using sharp — handles JPEG, PNG, WebP, AVIF, anything
-  // pdf-lib only supports JPEG and PNG so we always convert to JPEG for safety
-  try {
-    const sharp = (await import('sharp')).default
-    const jpegBuffer = await sharp(Buffer.from(imageBytes))
-      .jpeg({ quality: 95 })
-      .toBuffer()
-    imageBytes = new Uint8Array(jpegBuffer)
-    contentType = 'image/jpeg'
-  } catch {
-    // sharp failed — fall back to raw format detection
-  }
-
-  const isJpeg = contentType.includes('jpeg') || contentType.includes('jpg') ||
-    (imageBytes[0] === 0xFF && imageBytes[1] === 0xD8)
-
-  const embeddedImage = isJpeg
-    ? await pdfDoc.embedJpg(imageBytes)
-    : await pdfDoc.embedPng(imageBytes)
 
   // Draw full-wrap image at full page size
   page.drawImage(embeddedImage, {

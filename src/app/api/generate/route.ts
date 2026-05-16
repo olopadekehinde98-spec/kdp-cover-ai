@@ -109,18 +109,33 @@ export async function POST(req: NextRequest) {
       dims,
     })
 
+    // Download and store image as base64 JPEG so it never expires or changes format
+    let storedImageUrl = imageResult.imageUrl
+    try {
+      const imgRes = await fetch(imageResult.imageUrl, { redirect: 'follow' })
+      if (imgRes.ok) {
+        const imgBytes = Buffer.from(await imgRes.arrayBuffer())
+        const sharp = (await import('sharp')).default
+        const jpegBytes = await sharp(imgBytes).jpeg({ quality: 92 }).toBuffer()
+        storedImageUrl = `data:image/jpeg;base64,${jpegBytes.toString('base64')}`
+      }
+    } catch (e) {
+      console.warn('Image download/convert warning (using original URL):', e)
+      // keep original URL as fallback
+    }
+
     // Update cover record
     await prisma.cover.update({
       where: { id: cover.id },
       data: {
-        imageUrl: imageResult.imageUrl,
+        imageUrl: storedImageUrl,
         enhancedPrompt: imageResult.revisedPrompt,
         description,
         spineWidth: dims.spineWidth,
         totalWidthIn: dims.totalWidth,
         totalHeightIn: dims.totalHeight,
         status: 'COMPLETED',
-        generationCostUsd: 0.08,
+        generationCostUsd: 0.00,
       },
     })
 
@@ -132,7 +147,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       coverId: cover.id,
-      imageUrl: imageResult.imageUrl,
+      imageUrl: storedImageUrl,
       dims,
       typography,
       backCover,
