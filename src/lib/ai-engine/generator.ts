@@ -25,10 +25,14 @@ async function generateWithPollinations(prompt: string, mode: string): Promise<G
   // Pollinations generates images via a simple URL — completely free
   const encodedPrompt = encodeURIComponent(prompt)
   const seed = Math.floor(Math.random() * 999999)
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true`
+  // force jpeg so pdf-lib can always embed it
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true&format=jpeg`
 
-  // Verify the image actually loads (Pollinations returns 200 with the image directly)
-  const res = await fetch(imageUrl, { method: 'HEAD' })
+  // Fetch with a generous timeout — Pollinations can take 20-30s on first generation
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 50000)
+  const res = await fetch(imageUrl, { method: 'HEAD', signal: controller.signal, redirect: 'follow' })
+  clearTimeout(timeout)
   if (!res.ok) throw new Error(`Pollinations error: ${res.status}`)
 
   return {

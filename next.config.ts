@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  serverExternalPackages: ['sharp'],
+  experimental: {
+    // Allow sharp to run in serverless functions
+  },
+}
 
 export default nextConfig;

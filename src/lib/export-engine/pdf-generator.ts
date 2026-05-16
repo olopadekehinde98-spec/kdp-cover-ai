@@ -45,17 +45,33 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
 
   // Embed and draw the AI-generated full-wrap image
   let imageBytes: Uint8Array
+  let contentType = ''
   try {
-    const res = await fetch(input.imageUrl)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    const res = await fetch(input.imageUrl, { signal: controller.signal, redirect: 'follow' })
+    clearTimeout(timeout)
     if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`)
+    contentType = res.headers.get('content-type') ?? ''
     imageBytes = new Uint8Array(await res.arrayBuffer())
   } catch (e) {
     throw new Error(`Failed to fetch cover image: ${e}`)
   }
 
-  // Detect format from URL/magic bytes
-  const isJpeg = input.imageUrl.includes('.jpg') ||
-    input.imageUrl.includes('.jpeg') ||
+  // Normalize to JPEG using sharp — handles JPEG, PNG, WebP, AVIF, anything
+  // pdf-lib only supports JPEG and PNG so we always convert to JPEG for safety
+  try {
+    const sharp = (await import('sharp')).default
+    const jpegBuffer = await sharp(Buffer.from(imageBytes))
+      .jpeg({ quality: 95 })
+      .toBuffer()
+    imageBytes = new Uint8Array(jpegBuffer)
+    contentType = 'image/jpeg'
+  } catch {
+    // sharp failed — fall back to raw format detection
+  }
+
+  const isJpeg = contentType.includes('jpeg') || contentType.includes('jpg') ||
     (imageBytes[0] === 0xFF && imageBytes[1] === 0xD8)
 
   const embeddedImage = isJpeg
