@@ -7,7 +7,7 @@ export async function generateCoverImage(
 ): Promise<GenerationResult> {
   const enhancedPrompt = enhancePrompt(input, mode === 'full-wrap' ? 'full-wrap' : '2:3')
 
-  // Priority: Ideogram (paid, best quality) → OpenAI DALL-E 3 (paid) → Pollinations (free, no key needed)
+  // Priority: Ideogram (paid, best quality) → OpenAI gpt-image-1 (paid) → Pollinations (free, no key needed)
   if (process.env.IDEOGRAM_API_KEY) {
     return generateWithIdeogram(enhancedPrompt, mode)
   }
@@ -48,24 +48,39 @@ async function generateWithOpenAI(prompt: string, mode: string): Promise<Generat
   const { default: OpenAI } = await import('openai')
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-  const size = mode === 'full-wrap' ? '1792x1024' : '1024x1792'
+  // gpt-image-1 supported sizes: 1024x1024, 1536x1024 (landscape), 1024x1536 (portrait)
+  const size = mode === 'full-wrap' ? '1536x1024' : '1024x1536'
 
   const response = await client.images.generate({
-    model: 'dall-e-3',
+    model: 'gpt-image-1',
     prompt,
     n: 1,
-    size: size as '1792x1024' | '1024x1792',
-    quality: 'hd',
-    style: 'vivid',
+    size: size as '1536x1024' | '1024x1536' | '1024x1024',
+    quality: 'high',
   })
 
   const img = response.data?.[0]
-  if (!img?.url) throw new Error('No image URL returned from OpenAI')
+  if (!img) throw new Error('No image returned from OpenAI')
 
   const [w, h] = size.split('x').map(Number)
+
+  // gpt-image-1 returns base64 JSON by default
+  if (img.b64_json) {
+    const imageUrl = `data:image/png;base64,${img.b64_json}`
+    return {
+      imageUrl,
+      revisedPrompt: prompt,
+      width: w,
+      height: h,
+      provider: 'openai',
+    }
+  }
+
+  // Fallback: URL-based response
+  if (!img.url) throw new Error('No image URL or base64 returned from OpenAI')
   return {
     imageUrl: img.url,
-    revisedPrompt: img.revised_prompt ?? prompt,
+    revisedPrompt: (img as { revised_prompt?: string }).revised_prompt ?? prompt,
     width: w,
     height: h,
     provider: 'openai',

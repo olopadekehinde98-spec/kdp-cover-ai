@@ -112,13 +112,22 @@ export async function POST(req: NextRequest) {
     // Download and store image as base64 JPEG so it never expires or changes format
     let storedImageUrl = imageResult.imageUrl
     try {
-      const imgRes = await fetch(imageResult.imageUrl, { redirect: 'follow' })
-      if (imgRes.ok) {
-        const imgBytes = Buffer.from(await imgRes.arrayBuffer())
-        const sharp = (await import('sharp')).default
-        const jpegBytes = await sharp(imgBytes).jpeg({ quality: 92 }).toBuffer()
-        storedImageUrl = `data:image/jpeg;base64,${jpegBytes.toString('base64')}`
+      const sharp = (await import('sharp')).default
+      let imgBytes: Buffer
+
+      if (imageResult.imageUrl.startsWith('data:')) {
+        // Already base64 (e.g. from gpt-image-1) — decode directly
+        const base64 = imageResult.imageUrl.split(',')[1]
+        imgBytes = Buffer.from(base64, 'base64')
+      } else {
+        // Remote URL — download it
+        const imgRes = await fetch(imageResult.imageUrl, { redirect: 'follow' })
+        if (!imgRes.ok) throw new Error(`Image fetch failed: ${imgRes.status}`)
+        imgBytes = Buffer.from(await imgRes.arrayBuffer())
       }
+
+      const jpegBytes = await sharp(imgBytes).jpeg({ quality: 92 }).toBuffer()
+      storedImageUrl = `data:image/jpeg;base64,${jpegBytes.toString('base64')}`
     } catch (e) {
       console.warn('Image download/convert warning (using original URL):', e)
       // keep original URL as fallback
