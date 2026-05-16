@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import Link from 'next/link'
+import CoverGrid from '@/components/CoverGrid'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -103,41 +104,7 @@ export default async function DashboardPage() {
             <Link href="/history" className="text-sm text-violet-400 hover:text-violet-300">View all →</Link>
           </div>
 
-          {user.covers.length === 0 ? (
-            <div className="bg-gray-900 border border-gray-800 border-dashed rounded-2xl p-12 text-center">
-              <div className="text-4xl mb-4">📚</div>
-              <p className="text-gray-400 mb-4">No covers yet. Generate your first one!</p>
-              <Link href="/generate"
-                className="inline-flex bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-3 rounded-xl transition">
-                Generate Cover
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {user.covers.map((cover: typeof user.covers[0]) => (
-                <div key={cover.id} className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-600 transition group">
-                  <div className="aspect-[3/4] bg-gray-800 overflow-hidden">
-                    {cover.imageUrl ? (
-                      <img src={cover.imageUrl} alt={cover.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-600">
-                        {cover.status === 'GENERATING' ? (
-                          <div className="text-center">
-                            <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto mb-2" />
-                            <span className="text-xs">Generating...</span>
-                          </div>
-                        ) : '📚'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <p className="text-sm font-semibold text-white truncate">{cover.title}</p>
-                    <p className="text-xs text-gray-500 capitalize">{cover.genre} · {cover.trimSize}"</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <CoverGrid covers={user.covers} />
         </div>
 
         {/* Quick Actions */}
