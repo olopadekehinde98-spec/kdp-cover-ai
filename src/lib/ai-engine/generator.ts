@@ -68,7 +68,7 @@ async function generateWithOpenAI(prompt: string, mode: string): Promise<Generat
       prompt,
       n: 1,
       size,
-      quality: 'high',
+      quality: 'medium',
     }),
   })
 

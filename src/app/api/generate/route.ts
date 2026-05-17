@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
 import { generateCoverImage } from '@/lib/ai-engine/generator'
 
-export const maxDuration = 60 // seconds — Pollinations can take 30-50s
+export const maxDuration = 300 // seconds — gpt-image-1 can take 30-90s
 import { calculateKDPDimensions } from '@/lib/kdp-engine/calculator'
 import { buildTypographyLayout } from '@/lib/typography-engine/renderer'
 import { buildBackCoverLayout, generateBookDescription } from '@/lib/back-cover-engine'

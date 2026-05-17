@@ -86,8 +86,13 @@ export default function GeneratePage() {
           pageCount: Number(form.pageCount),
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Generation failed')
+      let data: any
+      try {
+        data = await res.json()
+      } catch {
+        throw new Error('Generation timed out. The AI is busy — please try again in a moment.')
+      }
+      if (!res.ok) throw new Error(data?.error || 'Generation failed. Please try again.')
       setResult(data)
       setStep(4)
     } catch (e: any) {
@@ -107,8 +112,9 @@ export default function GeneratePage() {
         body: JSON.stringify({ coverId: result.coverId }),
       })
       if (!res.ok) {
-        const d = await res.json()
-        throw new Error(d.error || 'Export failed')
+        let d: any
+        try { d = await res.json() } catch { throw new Error('Export timed out. Please try again.') }
+        throw new Error(d?.error || 'Export failed. Please try again.')
       }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
