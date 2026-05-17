@@ -36,10 +36,11 @@ export async function GET() {
   // Test 3: OpenAI via direct fetch (bypass SDK ByteString issue)
   if (process.env.OPENAI_API_KEY) {
     try {
+      const apiKey = (process.env.OPENAI_API_KEY ?? '').replace(/^﻿/, '').trim()
       const res = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

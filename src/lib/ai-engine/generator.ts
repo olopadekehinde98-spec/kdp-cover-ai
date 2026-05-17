@@ -53,11 +53,14 @@ async function generateWithOpenAI(prompt: string, mode: string): Promise<Generat
   const size = mode === 'full-wrap' ? '1536x1024' : '1024x1536'
   const [w, h] = size.split('x').map(Number)
 
+  // Strip BOM character that can be present when key was copy-pasted
+  const apiKey = (process.env.OPENAI_API_KEY ?? '').replace(/^﻿/, '').trim()
+
   // Use direct fetch to avoid openai SDK ByteString bug on Node.js v24
   const res = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

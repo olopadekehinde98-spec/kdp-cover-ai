@@ -93,7 +93,9 @@ export async function generateBookDescription(
   }
 
   const { default: OpenAI } = await import('openai')
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  // Strip BOM character that can be present when key was copy-pasted
+  const apiKey = (process.env.OPENAI_API_KEY ?? '').replace(/^﻿/, '').trim()
+  const client = new OpenAI({ apiKey })
 
   const res = await client.chat.completions.create({
     model: 'gpt-4o-mini',
