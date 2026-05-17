@@ -67,14 +67,15 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
     } catch (e) {
       throw new Error(e instanceof Error ? e.message : `Failed to fetch cover image: ${e}`)
     }
-    // Convert any format (WebP, PNG, etc.) to JPEG via sharp
-    try {
-      const sharp = (await import('sharp')).default
-      const jpegBuffer = await sharp(Buffer.from(imageBytes)).jpeg({ quality: 92 }).toBuffer()
-      imageBytes = new Uint8Array(jpegBuffer)
-    } catch {
-      // sharp unavailable — will try raw embed below
-    }
+  }
+
+  // Always convert to JPEG via sharp — handles PNG, WebP, and any other format
+  try {
+    const sharp = (await import('sharp')).default
+    const jpegBuffer = await sharp(Buffer.from(imageBytes)).jpeg({ quality: 92 }).toBuffer()
+    imageBytes = new Uint8Array(jpegBuffer)
+  } catch {
+    // sharp unavailable — fall through and try raw embed
   }
 
   // Detect format by magic bytes
@@ -87,14 +88,14 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   } else if (isPng) {
     embeddedImage = await pdfDoc.embedPng(imageBytes)
   } else {
-    // Unknown format — try JPEG first, then PNG
+    // Last resort — try both
     try {
       embeddedImage = await pdfDoc.embedJpg(imageBytes)
     } catch {
       try {
         embeddedImage = await pdfDoc.embedPng(imageBytes)
       } catch {
-        throw new Error('Image format not supported for PDF. Please generate a new cover and export that one.')
+        throw new Error('Image format not supported. Please regenerate this cover and try again.')
       }
     }
   }
