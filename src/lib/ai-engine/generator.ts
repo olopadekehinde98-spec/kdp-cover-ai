@@ -49,30 +49,39 @@ async function generateWithPollinations(prompt: string, mode: string): Promise<G
 }
 
 async function generateWithOpenAI(prompt: string, mode: string): Promise<GenerationResult> {
-  const { default: OpenAI } = await import('openai')
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
   // gpt-image-1 supported sizes: 1024x1024, 1536x1024 (landscape), 1024x1536 (portrait)
   const size = mode === 'full-wrap' ? '1536x1024' : '1024x1536'
-
-  const response = await client.images.generate({
-    model: 'gpt-image-1',
-    prompt,
-    n: 1,
-    size: size as '1536x1024' | '1024x1536' | '1024x1024',
-    quality: 'high',
-  })
-
-  const img = response.data?.[0]
-  if (!img) throw new Error('No image returned from OpenAI')
-
   const [w, h] = size.split('x').map(Number)
 
-  // gpt-image-1 returns base64 JSON by default
+  // Use direct fetch to avoid openai SDK ByteString bug on Node.js v24
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-image-1',
+      prompt,
+      n: 1,
+      size,
+      quality: 'high',
+    }),
+  })
+
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`OpenAI API error ${res.status}: ${errText.substring(0, 200)}`)
+  }
+
+  const data = await res.json() as { data?: Array<{ b64_json?: string; url?: string; revised_prompt?: string }> }
+  const img = data.data?.[0]
+  if (!img) throw new Error('No image returned from OpenAI')
+
+  // gpt-image-1 returns base64 PNG by default
   if (img.b64_json) {
-    const imageUrl = `data:image/png;base64,${img.b64_json}`
     return {
-      imageUrl,
+      imageUrl: `data:image/png;base64,${img.b64_json}`,
       revisedPrompt: prompt,
       width: w,
       height: h,
@@ -80,11 +89,10 @@ async function generateWithOpenAI(prompt: string, mode: string): Promise<Generat
     }
   }
 
-  // Fallback: URL-based response
-  if (!img.url) throw new Error('No image URL or base64 returned from OpenAI')
+  if (!img.url) throw new Error('No image data returned from OpenAI')
   return {
     imageUrl: img.url,
-    revisedPrompt: (img as { revised_prompt?: string }).revised_prompt ?? prompt,
+    revisedPrompt: img.revised_prompt ?? prompt,
     width: w,
     height: h,
     provider: 'openai',
