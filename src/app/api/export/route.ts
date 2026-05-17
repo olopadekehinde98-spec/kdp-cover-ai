@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
 import { generateKDPPdf, validateExport } from '@/lib/export-engine/pdf-generator'
 
-export const maxDuration = 300 // seconds — PDF generation can be slow
+export const maxDuration = 60
 import { calculateKDPDimensions } from '@/lib/kdp-engine/calculator'
 import { buildTypographyLayout } from '@/lib/typography-engine/renderer'
 import { buildBackCoverLayout } from '@/lib/back-cover-engine'
