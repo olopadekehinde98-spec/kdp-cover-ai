@@ -117,28 +117,33 @@ export async function POST(req: NextRequest) {
       dims,
     })
 
-    // Download and store image as base64 JPEG so it never expires or changes format
+    // Download image and store as base64 so it never expires
     let storedImageUrl = imageResult.imageUrl
     try {
-      const sharp = (await import('sharp')).default
+      // Step 1: get raw bytes
       let imgBytes: Buffer
-
       if (imageResult.imageUrl.startsWith('data:')) {
-        // Already base64 (e.g. from gpt-image-1) — decode directly
-        const base64 = imageResult.imageUrl.split(',')[1]
-        imgBytes = Buffer.from(base64, 'base64')
+        imgBytes = Buffer.from(imageResult.imageUrl.split(',')[1], 'base64')
       } else {
-        // Remote URL — download it
         const imgRes = await fetch(imageResult.imageUrl, { redirect: 'follow' })
         if (!imgRes.ok) throw new Error(`Image fetch failed: ${imgRes.status}`)
         imgBytes = Buffer.from(await imgRes.arrayBuffer())
       }
 
-      const jpegBytes = await sharp(imgBytes).jpeg({ quality: 92 }).toBuffer()
-      storedImageUrl = `data:image/jpeg;base64,${jpegBytes.toString('base64')}`
+      // Step 2: try sharp to ensure clean JPEG — if sharp fails, use raw bytes as-is
+      // (Pollinations already returns valid JPEG so raw bytes are safe)
+      let finalBytes = imgBytes
+      try {
+        const sharp = (await import('sharp')).default
+        finalBytes = await sharp(imgBytes).jpeg({ quality: 92 }).toBuffer()
+      } catch {
+        // sharp unavailable on this platform — raw bytes are already JPEG from Pollinations
+        finalBytes = imgBytes
+      }
+
+      storedImageUrl = `data:image/jpeg;base64,${finalBytes.toString('base64')}`
     } catch (e) {
-      console.warn('Image download/convert warning (using original URL):', e)
-      // keep original URL as fallback
+      console.warn('Image store warning:', e)
     }
 
     // Update cover record

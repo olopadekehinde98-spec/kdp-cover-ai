@@ -45,14 +45,16 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
 
   // Embed and draw the AI-generated full-wrap image
   let imageBytes: Uint8Array
+  let mimeType = 'image/jpeg' // default
 
   if (input.imageUrl.startsWith('data:')) {
-    // Stored as base64 — decode directly, no network call needed
+    // Read mime type directly from the data URL — no guessing needed
+    mimeType = input.imageUrl.split(';')[0].split(':')[1] ?? 'image/jpeg'
     const base64 = input.imageUrl.split(',')[1]
     if (!base64) throw new Error('Invalid base64 image data stored in database')
     imageBytes = new Uint8Array(Buffer.from(base64, 'base64'))
   } else {
-    // External URL — fetch with timeout and redirect follow
+    // External URL — fetch with timeout
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 25000)
@@ -60,42 +62,28 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
       clearTimeout(timer)
       if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`)
       const ct = res.headers.get('content-type') ?? ''
-      if (!ct.includes('image')) {
-        throw new Error('Cover image has expired. Please generate a new cover and export that one.')
-      }
+      if (!ct.includes('image')) throw new Error('Cover image has expired. Please generate a new cover.')
+      mimeType = ct.split(';')[0].trim()
       imageBytes = new Uint8Array(await res.arrayBuffer())
     } catch (e) {
       throw new Error(e instanceof Error ? e.message : `Failed to fetch cover image: ${e}`)
     }
   }
 
-  // Always convert to JPEG via sharp — handles PNG, WebP, and any other format
-  try {
-    const sharp = (await import('sharp')).default
-    const jpegBuffer = await sharp(Buffer.from(imageBytes)).jpeg({ quality: 92 }).toBuffer()
-    imageBytes = new Uint8Array(jpegBuffer)
-  } catch {
-    // sharp unavailable — fall through and try raw embed
-  }
-
-  // Detect format by magic bytes
-  const isJpeg = imageBytes[0] === 0xFF && imageBytes[1] === 0xD8
-  const isPng  = imageBytes[0] === 0x89 && imageBytes[1] === 0x50
-
+  // Embed directly using mime type — no sharp needed
   let embeddedImage
-  if (isJpeg) {
-    embeddedImage = await pdfDoc.embedJpg(imageBytes)
-  } else if (isPng) {
+  if (mimeType === 'image/png') {
     embeddedImage = await pdfDoc.embedPng(imageBytes)
   } else {
-    // Last resort — try both
+    // jpeg or anything else — embed as JPEG
     try {
       embeddedImage = await pdfDoc.embedJpg(imageBytes)
     } catch {
+      // last resort — try PNG
       try {
         embeddedImage = await pdfDoc.embedPng(imageBytes)
       } catch {
-        throw new Error('Image format not supported. Please regenerate this cover and try again.')
+        throw new Error('Export failed: image could not be embedded. Please generate a new cover and try again.')
       }
     }
   }
