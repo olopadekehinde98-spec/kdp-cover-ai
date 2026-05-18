@@ -17,21 +17,34 @@ async function generateWithPollinations(prompt: string, mode: string): Promise<G
   const width = mode === 'full-wrap' ? 1792 : 1024
   const height = mode === 'full-wrap' ? 1024 : 1536
 
-  // Pollinations generates images via a simple URL — completely free
+  // Download the actual image bytes — do NOT trust the URL format parameter
   const encodedPrompt = encodeURIComponent(prompt)
   const seed = Math.floor(Math.random() * 999999)
-  // force jpeg so pdf-lib can always embed it
   const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true&format=jpeg`
 
-  // Fetch with a generous timeout — Pollinations can take 20-30s on first generation
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 50000)
-  const res = await fetch(imageUrl, { method: 'HEAD', signal: controller.signal, redirect: 'follow' })
+  const res = await fetch(imageUrl, { signal: controller.signal, redirect: 'follow' })
   clearTimeout(timeout)
   if (!res.ok) throw new Error(`Pollinations error: ${res.status}`)
 
+  const imgBytes = Buffer.from(await res.arrayBuffer())
+
+  // Check actual bytes — Pollinations sometimes returns WebP even with ?format=jpeg
+  const isJpeg = imgBytes[0] === 0xFF && imgBytes[1] === 0xD8
+  const isPng  = imgBytes[0] === 0x89 && imgBytes[1] === 0x50
+
+  if (!isJpeg && !isPng) {
+    // Got WebP or unknown format — throw so caller falls back to retry
+    throw new Error(`Pollinations returned unsupported format (0x${imgBytes[0].toString(16)} 0x${imgBytes[1].toString(16)})`)
+  }
+
+  // Return as base64 data URL — format is verified, no sharp needed
+  const mime = isJpeg ? 'image/jpeg' : 'image/png'
+  const dataUrl = `data:${mime};base64,${imgBytes.toString('base64')}`
+
   return {
-    imageUrl,
+    imageUrl: dataUrl,
     revisedPrompt: prompt,
     width,
     height,
