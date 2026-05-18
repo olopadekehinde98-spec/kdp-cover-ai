@@ -48,8 +48,12 @@ export default function CoverGrid({ covers }: { covers: Cover[] }) {
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        setExportError(data.error ?? 'Export failed')
+        let msg = 'Export failed. Please try again.'
+        try {
+          const data = await res.json()
+          msg = data.error ?? msg
+        } catch { /* response was not JSON (e.g. timeout HTML page) */ }
+        setExportError(msg)
         return
       }
 
@@ -61,8 +65,8 @@ export default function CoverGrid({ covers }: { covers: Cover[] }) {
       a.download = `${cover.title}-kdp-cover.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e) {
-      setExportError('Network error during export')
+    } catch (e: any) {
+      setExportError(e?.message ?? 'Network error during export')
     } finally {
       setExporting(null)
     }
