@@ -12,49 +12,37 @@ function hexToRgb(hex: string): [number, number, number] {
 export function validateExport(input: ExportInput): ExportValidation {
   const errors: string[] = []
   const { dims } = input
-
-  const widthIn = dims.totalWidth
-  const heightIn = dims.totalHeight
-  const dpi = dims.ppi
-
-  if (dpi < 300) errors.push(`DPI is ${dpi}, minimum required is 300.`)
-  if (widthIn <= 0 || heightIn <= 0) errors.push('Invalid dimensions calculated.')
+  if (dims.ppi < 300) errors.push(`DPI is ${dims.ppi}, minimum required is 300.`)
+  if (dims.totalWidth <= 0 || dims.totalHeight <= 0) errors.push('Invalid dimensions calculated.')
   if (dims.bleed !== 0.125) errors.push('Bleed must be 0.125" per KDP specification.')
   if (!input.imageUrl) errors.push('No cover image provided.')
-
-  return { valid: errors.length === 0, errors, widthIn, heightIn, dpi }
+  return { valid: errors.length === 0, errors, widthIn: dims.totalWidth, heightIn: dims.totalHeight, dpi: dims.ppi }
 }
 
 export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> {
   const { dims, typography } = input
-  const PTS_PER_INCH = 72
+  const PT = 72 // points per inch
 
-  // PDF points dimensions (Amazon accepts point-based PDFs)
-  const pageWidthPt = dims.totalWidth * PTS_PER_INCH
-  const pageHeightPt = dims.totalHeight * PTS_PER_INCH
+  const pageWidthPt  = dims.totalWidth  * PT
+  const pageHeightPt = dims.totalHeight * PT
 
   const pdfDoc = await PDFDocument.create()
-
-  // Set PDF metadata
   pdfDoc.setTitle(`${input.title} — KDP Cover`)
   pdfDoc.setAuthor(input.authorName)
   pdfDoc.setCreator('KDP Cover AI')
-  pdfDoc.setProducer('KDP Cover AI — kdpcoverai.com')
 
   const page = pdfDoc.addPage([pageWidthPt, pageHeightPt])
 
-  // Embed and draw the AI-generated full-wrap image
+  // ── 1. EMBED BACKGROUND IMAGE ──────────────────────────────────
   let imageBytes: Uint8Array
-  let mimeType = 'image/jpeg' // default
+  let mimeType = 'image/jpeg'
 
   if (input.imageUrl.startsWith('data:')) {
-    // Read mime type directly from the data URL — no guessing needed
     mimeType = input.imageUrl.split(';')[0].split(':')[1] ?? 'image/jpeg'
     const base64 = input.imageUrl.split(',')[1]
     if (!base64) throw new Error('Invalid base64 image data stored in database')
     imageBytes = new Uint8Array(Buffer.from(base64, 'base64'))
   } else {
-    // External URL — fetch with timeout
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 25000)
@@ -70,182 +58,275 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
     }
   }
 
-  // Embed directly using mime type — no sharp needed
   let embeddedImage
   if (mimeType === 'image/png') {
     embeddedImage = await pdfDoc.embedPng(imageBytes)
   } else {
-    // jpeg or anything else — embed as JPEG
     try {
       embeddedImage = await pdfDoc.embedJpg(imageBytes)
     } catch {
-      // last resort — try PNG
-      try {
-        embeddedImage = await pdfDoc.embedPng(imageBytes)
-      } catch {
-        throw new Error('Export failed: image could not be embedded. Please generate a new cover and try again.')
-      }
+      try { embeddedImage = await pdfDoc.embedPng(imageBytes) }
+      catch { throw new Error('Export failed: image could not be embedded. Please generate a new cover and try again.') }
     }
   }
 
-  // Draw full-wrap image at full page size
-  page.drawImage(embeddedImage, {
-    x: 0,
-    y: 0,
-    width: pageWidthPt,
-    height: pageHeightPt,
-  })
+  // Draw full-wrap background
+  page.drawImage(embeddedImage, { x: 0, y: 0, width: pageWidthPt, height: pageHeightPt })
 
-  // Draw typography overlays
-  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  // ── 2. FONTS ───────────────────────────────────────────────────
+  const boldFont   = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const obliqueFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique)
 
-  function ptFromPx(px: number): number { return (px / dims.ppi) * PTS_PER_INCH }
+  // Helpers
+  function px2pt(px: number): number { return (px / dims.ppi) * PT }
+  function pdfY(pixelY: number): number { return pageHeightPt - px2pt(pixelY) }
 
-  // PDF coordinate system: origin is bottom-left, Y flips
-  function pdfY(pixelY: number): number {
-    return pageHeightPt - ptFromPx(pixelY)
+  function drawCenteredText(
+    text: string, xPt: number, yPt: number, widthPt: number,
+    sizePt: number, font: typeof boldFont, color: [number, number, number]
+  ) {
+    const tw = font.widthOfTextAtSize(text, sizePt)
+    const cx = xPt + (widthPt - tw) / 2
+    page.drawText(text, { x: cx, y: yPt, size: sizePt, font, color: rgb(...color) })
   }
 
-  // Draw title
+  function wrapLines(text: string, widthPt: number, sizePt: number, font: typeof boldFont): string[] {
+    const words = text.split(' ')
+    const lines: string[] = []
+    let cur = ''
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w
+      if (font.widthOfTextAtSize(test, sizePt) > widthPt && cur) {
+        lines.push(cur); cur = w
+      } else { cur = test }
+    }
+    if (cur) lines.push(cur)
+    return lines
+  }
+
+  // ── 3. FRONT COVER TEXT ────────────────────────────────────────
+  const frontStartPt = dims.frontCoverStartX * PT
+  const frontWidthPt = dims.trimWidth * PT
+  const bleedPt = dims.bleed * PT
+  const safePt  = dims.safeZone * PT
+  const padPt   = safePt + 0.2 * PT
+  const textWidthPt = frontWidthPt - padPt * 2
+
+  // Dark gradient overlay behind title area so text is always readable
+  page.drawRectangle({
+    x: frontStartPt,
+    y: pageHeightPt - bleedPt - 4.2 * PT, // top 4.2" from top
+    width: frontWidthPt,
+    height: 3.8 * PT,
+    color: rgb(0, 0, 0),
+    opacity: 0.55,
+  })
+
+  // TITLE — large bold white
   const t = typography.title
-  const titleSizePt = ptFromPx(t.fontSize)
-  const [tr, tg, tb] = hexToRgb(t.color)
-  const titleLines = wrapText(t.text, t.width, t.fontSize, t.fontFamily)
+  const titleSizePt = px2pt(t.fontSize)
+  const titleLines  = wrapLines(t.text, textWidthPt, titleSizePt, boldFont)
 
   titleLines.forEach((line, i) => {
-    const lineYPx = t.y + i * t.fontSize * t.lineHeight
-    const font = t.fontWeight === '700' || t.fontWeight === '800' ? helveticaBold : helvetica
-    const textWidth = font.widthOfTextAtSize(line, titleSizePt)
-    const xPt = ptFromPx(t.x) + (ptFromPx(t.width) - textWidth) / 2
-
-    page.drawText(line, {
-      x: xPt,
-      y: pdfY(lineYPx) - titleSizePt,
-      size: titleSizePt,
-      font,
-      color: rgb(tr, tg, tb),
-    })
+    const yPt = pdfY(t.y) - titleSizePt - i * titleSizePt * t.lineHeight
+    drawCenteredText(line, frontStartPt + padPt, yPt, textWidthPt, titleSizePt, boldFont, [1, 1, 1])
   })
 
-  // Draw subtitle
+  // SUBTITLE — italic white, below title
   if (typography.subtitle) {
     const s = typography.subtitle
-    const subtitleSizePt = ptFromPx(s.fontSize)
-    const [sr, sg, sb] = hexToRgb(s.color)
-    const subtitleLines = wrapText(s.text, s.width, s.fontSize, s.fontFamily)
-
-    subtitleLines.forEach((line, i) => {
-      const lineYPx = s.y + i * s.fontSize * s.lineHeight
-      const textWidth = helvetica.widthOfTextAtSize(line, subtitleSizePt)
-      const xPt = ptFromPx(s.x) + (ptFromPx(s.width) - textWidth) / 2
-
-      page.drawText(line, {
-        x: xPt,
-        y: pdfY(lineYPx) - subtitleSizePt,
-        size: subtitleSizePt,
-        font: helvetica,
-        color: rgb(sr, sg, sb),
-      })
+    const subSizePt = px2pt(s.fontSize)
+    const subLines  = wrapLines(s.text, textWidthPt, subSizePt, obliqueFont)
+    subLines.forEach((line, i) => {
+      const yPt = pdfY(s.y) - subSizePt - i * subSizePt * s.lineHeight
+      drawCenteredText(line, frontStartPt + padPt, yPt, textWidthPt, subSizePt, obliqueFont, [0.88, 0.88, 0.88])
     })
   }
 
-  // Draw author name
-  const a = typography.author
-  const authorSizePt = ptFromPx(a.fontSize)
-  const [ar, ag, ab] = hexToRgb(a.color)
-  const authorWidth = helvetica.widthOfTextAtSize(a.text, authorSizePt)
-  const authorXPt = ptFromPx(a.x) + (ptFromPx(a.width) - authorWidth) / 2
-
-  page.drawText(a.text, {
-    x: authorXPt,
-    y: pdfY(a.y) - authorSizePt,
-    size: authorSizePt,
-    font: helvetica,
-    color: rgb(ar, ag, ab),
+  // Thin gold decorative line above author name
+  const lineY = pdfY(typography.author.y) + px2pt(typography.author.fontSize) + 0.12 * PT
+  page.drawLine({
+    start: { x: frontStartPt + padPt + textWidthPt * 0.2, y: lineY },
+    end:   { x: frontStartPt + padPt + textWidthPt * 0.8, y: lineY },
+    thickness: 1.5,
+    color: rgb(0.85, 0.72, 0.35), // gold
   })
 
-  // Draw spine title (rotated)
-  if (typography.spineTitle) {
+  // Dark overlay behind author name at bottom
+  page.drawRectangle({
+    x: frontStartPt,
+    y: bleedPt,
+    width: frontWidthPt,
+    height: 1.2 * PT,
+    color: rgb(0, 0, 0),
+    opacity: 0.55,
+  })
+
+  // AUTHOR NAME — bold white, letter-spaced, bottom of front cover
+  const a = typography.author
+  const authorSizePt = px2pt(a.fontSize)
+  const authorYPt = pdfY(a.y) - authorSizePt
+  drawCenteredText(a.text, frontStartPt + padPt, authorYPt, textWidthPt, authorSizePt, boldFont, [1, 1, 1])
+
+  // ── 4. SPINE TEXT ──────────────────────────────────────────────
+  if (typography.spineTitle && dims.spineWidth >= 0.2) {
     const st = typography.spineTitle
-    const spineSizePt = ptFromPx(st.fontSize)
-    const [spr, spg, spb] = hexToRgb(st.color)
-    const font = st.fontWeight === '700' ? helveticaBold : helvetica
+    const spineSizePt = px2pt(st.fontSize)
+    const spineCenterX = dims.spineStartX * PT + (dims.spineWidth * PT) / 2
 
     page.drawText(st.text, {
-      x: ptFromPx(st.x),
-      y: pdfY(st.y),
+      x: spineCenterX - spineSizePt * 0.3,
+      y: bleedPt + safePt + 0.4 * PT,
       size: spineSizePt,
-      font,
-      color: rgb(spr, spg, spb),
-      rotate: degrees(-90),
+      font: boldFont,
+      color: rgb(1, 1, 1),
+      rotate: degrees(90),
     })
-  }
 
-  // Draw spine author (rotated)
-  if (typography.spineAuthor) {
-    const sa = typography.spineAuthor
-    const saSize = ptFromPx(sa.fontSize)
-    const [sar, sag, sab] = hexToRgb(sa.color)
-
-    page.drawText(sa.text, {
-      x: ptFromPx(sa.x),
-      y: pdfY(sa.y),
-      size: saSize,
-      font: helvetica,
-      color: rgb(sar, sag, sab),
-      rotate: degrees(-90),
-    })
-  }
-
-  // Draw back cover description
-  if (input.description) {
-    const { backCover } = input
-    const descFontPx = Math.round(dims.ppi * 0.10)
-    const descSizePt = ptFromPx(descFontPx)
-    const [dr, dg, db] = hexToRgb(backCover.textColor)
-    const descLines = wrapText(input.description, backCover.descriptionBox.width, descFontPx, 'body')
-
-    descLines.slice(0, 12).forEach((line, i) => {
-      const lineYPx = backCover.descriptionBox.y + i * descFontPx * 1.6
-      page.drawText(line, {
-        x: ptFromPx(backCover.descriptionBox.x),
-        y: pdfY(lineYPx) - descSizePt,
-        size: descSizePt,
-        font: helvetica,
-        color: rgb(dr, dg, db),
+    if (typography.spineAuthor) {
+      const sa = typography.spineAuthor
+      const saSizePt = px2pt(sa.fontSize)
+      page.drawText(sa.text, {
+        x: spineCenterX - saSizePt * 0.3,
+        y: pageHeightPt - bleedPt - safePt - 0.3 * PT,
+        size: saSizePt,
+        font: regularFont,
+        color: rgb(0.9, 0.9, 0.9),
+        rotate: degrees(90),
       })
+    }
+  }
+
+  // ── 5. BACK COVER ─────────────────────────────────────────────
+  const { backCover } = input
+  const backStartPt  = dims.backCoverStartX * PT
+  const backWidthPt  = dims.trimWidth * PT
+  const backPadPt    = padPt
+  const backTextWidthPt = backWidthPt - backPadPt * 2
+  const backContentX = backStartPt + backPadPt
+
+  // Semi-transparent dark overlay over entire back cover for readability
+  page.drawRectangle({
+    x: backStartPt,
+    y: bleedPt,
+    width: backWidthPt,
+    height: pageHeightPt - bleedPt * 2,
+    color: rgb(0, 0, 0),
+    opacity: 0.50,
+  })
+
+  let currentYPt = pageHeightPt - bleedPt - safePt - 0.5 * PT
+
+  // ── "ABOUT THE BOOK" LABEL ────────────────────────────────────
+  const labelSizePt = 9
+  const descSizePt  = 9.5
+  const bioSizePt   = 9
+  const lineHeightDesc = descSizePt * 1.55
+  const lineHeightBio  = bioSizePt  * 1.5
+
+  page.drawText('ABOUT THE BOOK', {
+    x: backContentX,
+    y: currentYPt - labelSizePt,
+    size: labelSizePt,
+    font: boldFont,
+    color: rgb(0.85, 0.72, 0.35), // gold accent
+  })
+  currentYPt -= labelSizePt + 0.18 * PT
+
+  // Gold underline under label
+  page.drawLine({
+    start: { x: backContentX, y: currentYPt },
+    end:   { x: backContentX + backTextWidthPt, y: currentYPt },
+    thickness: 0.8,
+    color: rgb(0.85, 0.72, 0.35),
+  })
+  currentYPt -= 0.18 * PT
+
+  // ── DESCRIPTION TEXT ──────────────────────────────────────────
+  if (input.description) {
+    const descLines = wrapLines(input.description, backTextWidthPt, descSizePt, regularFont)
+    const maxDescLines = 10
+    descLines.slice(0, maxDescLines).forEach(line => {
+      page.drawText(line, {
+        x: backContentX,
+        y: currentYPt - descSizePt,
+        size: descSizePt,
+        font: regularFont,
+        color: rgb(0.95, 0.95, 0.95),
+      })
+      currentYPt -= lineHeightDesc
     })
   }
 
-  // Draw white barcode safe area box
-  const bc = input.backCover.barcodeBox
+  currentYPt -= 0.35 * PT
+
+  // White divider line between sections
+  page.drawLine({
+    start: { x: backContentX, y: currentYPt },
+    end:   { x: backContentX + backTextWidthPt, y: currentYPt },
+    thickness: 0.5,
+    color: rgb(0.6, 0.6, 0.6),
+  })
+  currentYPt -= 0.28 * PT
+
+  // ── "ABOUT THE AUTHOR" LABEL ──────────────────────────────────
+  page.drawText('ABOUT THE AUTHOR', {
+    x: backContentX,
+    y: currentYPt - labelSizePt,
+    size: labelSizePt,
+    font: boldFont,
+    color: rgb(0.85, 0.72, 0.35), // gold accent
+  })
+  currentYPt -= labelSizePt + 0.18 * PT
+
+  // Gold underline
+  page.drawLine({
+    start: { x: backContentX, y: currentYPt },
+    end:   { x: backContentX + backTextWidthPt, y: currentYPt },
+    thickness: 0.8,
+    color: rgb(0.85, 0.72, 0.35),
+  })
+  currentYPt -= 0.18 * PT
+
+  // ── AUTHOR BIO TEXT ───────────────────────────────────────────
+  const bioText = input.authorBio ?? input.authorName
+  const bioLines = wrapLines(bioText, backTextWidthPt, bioSizePt, regularFont)
+  bioLines.slice(0, 6).forEach(line => {
+    page.drawText(line, {
+      x: backContentX,
+      y: currentYPt - bioSizePt,
+      size: bioSizePt,
+      font: regularFont,
+      color: rgb(0.9, 0.9, 0.9),
+    })
+    currentYPt -= lineHeightBio
+  })
+
+  // ── 6. BARCODE WHITE BOX — bottom-right of back cover ─────────
+  const bc = backCover.barcodeBox
   page.drawRectangle({
-    x: ptFromPx(bc.x),
+    x: px2pt(bc.x),
     y: pdfY(bc.y + bc.height),
-    width: ptFromPx(bc.width),
-    height: ptFromPx(bc.height),
+    width: px2pt(bc.width),
+    height: px2pt(bc.height),
     color: rgb(1, 1, 1),
   })
 
-  // Trim marks (4 corners, outside bleed)
-  const markLen = 0.1875 * PTS_PER_INCH
-  const bleedPt = dims.bleed * PTS_PER_INCH
+  // ── 7. TRIM MARKS ─────────────────────────────────────────────
+  const markLen   = 0.1875 * PT
   const markColor = rgb(0, 0, 0)
-  const markWidth = 0.5
-
-  // Corners: TL, TR, BL, BR
   const corners = [
-    { cx: bleedPt, cy: pageHeightPt - bleedPt },
+    { cx: bleedPt,              cy: pageHeightPt - bleedPt },
     { cx: pageWidthPt - bleedPt, cy: pageHeightPt - bleedPt },
-    { cx: bleedPt, cy: bleedPt },
+    { cx: bleedPt,              cy: bleedPt },
     { cx: pageWidthPt - bleedPt, cy: bleedPt },
   ]
   corners.forEach(({ cx, cy }) => {
-    page.drawLine({ start: { x: cx - markLen, y: cy }, end: { x: cx - 2, y: cy }, color: markColor, thickness: markWidth })
-    page.drawLine({ start: { x: cx + 2, y: cy }, end: { x: cx + markLen, y: cy }, color: markColor, thickness: markWidth })
-    page.drawLine({ start: { x: cx, y: cy - markLen }, end: { x: cx, y: cy - 2 }, color: markColor, thickness: markWidth })
-    page.drawLine({ start: { x: cx, y: cy + 2 }, end: { x: cx, y: cy + markLen }, color: markColor, thickness: markWidth })
+    page.drawLine({ start: { x: cx - markLen, y: cy }, end: { x: cx - 2, y: cy }, color: markColor, thickness: 0.5 })
+    page.drawLine({ start: { x: cx + 2,       y: cy }, end: { x: cx + markLen, y: cy }, color: markColor, thickness: 0.5 })
+    page.drawLine({ start: { x: cx, y: cy - markLen }, end: { x: cx, y: cy - 2 }, color: markColor, thickness: 0.5 })
+    page.drawLine({ start: { x: cx, y: cy + 2       }, end: { x: cx, y: cy + markLen }, color: markColor, thickness: 0.5 })
   })
 
   const pdfBytes = await pdfDoc.save()
@@ -253,30 +334,9 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
 
   return {
     pdfBuffer,
-    pngPreviewBuffer: Buffer.alloc(0), // PNG preview handled separately
+    pngPreviewBuffer: Buffer.alloc(0),
     widthPx: dims.totalWidthPx,
     heightPx: dims.totalHeightPx,
     fileSizeBytes: pdfBuffer.length,
   }
-}
-
-function wrapText(text: string, maxWidthPx: number, fontSizePx: number, _fontFamily: string): string[] {
-  // Approximate character width: 0.55 * fontSize
-  const approxCharWidth = fontSizePx * 0.55
-  const charsPerLine = Math.floor(maxWidthPx / approxCharWidth)
-  const words = text.split(' ')
-  const lines: string[] = []
-  let current = ''
-
-  for (const word of words) {
-    const test = current ? `${current} ${word}` : word
-    if (test.length > charsPerLine && current) {
-      lines.push(current)
-      current = word
-    } else {
-      current = test
-    }
-  }
-  if (current) lines.push(current)
-  return lines
 }

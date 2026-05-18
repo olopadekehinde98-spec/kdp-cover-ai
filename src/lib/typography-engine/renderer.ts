@@ -11,13 +11,12 @@ interface TypographyInput {
   dims: KDPDimensions
 }
 
-function calcFontSize(text: string, maxWidthPx: number, basePx: number): number {
-  // Rough character-width scaling: reduce size for long titles
-  const charCount = text.length
-  if (charCount <= 15) return basePx
-  if (charCount <= 25) return Math.round(basePx * 0.85)
-  if (charCount <= 35) return Math.round(basePx * 0.72)
-  return Math.round(basePx * 0.60)
+function scaleFontSize(text: string, basePx: number): number {
+  const len = text.length
+  if (len <= 12) return basePx
+  if (len <= 20) return Math.round(basePx * 0.88)
+  if (len <= 30) return Math.round(basePx * 0.75)
+  return Math.round(basePx * 0.62)
 }
 
 export function buildTypographyLayout(input: TypographyInput): TypographyLayout {
@@ -25,85 +24,92 @@ export function buildTypographyLayout(input: TypographyInput): TypographyLayout 
   const typo = GENRE_TYPOGRAPHY[genre]
   const ppi = dims.ppi
 
-  // Front cover region in pixels
+  // Front cover region
   const frontStartPx = Math.round(dims.frontCoverStartX * ppi)
-  const frontWidthPx = Math.round(dims.trimWidth * ppi)
+  const frontWidthPx  = Math.round(dims.trimWidth * ppi)
   const totalHeightPx = dims.totalHeightPx
   const bleedPx = Math.round(dims.bleed * ppi)
-  const safePx = Math.round(dims.safeZone * ppi)
+  const safePx  = Math.round(dims.safeZone * ppi)
 
-  const textPadding = safePx + Math.round(0.15 * ppi)
-  const textMaxWidth = frontWidthPx - textPadding * 2
+  const pad = safePx + Math.round(0.2 * ppi)
+  const textMaxWidth = frontWidthPx - pad * 2
 
-  // Title placement: upper portion of front cover
-  const titleBaseFontPx = Math.round(ppi * 0.55) // ~165px at 300dpi
-  const titleFontPx = calcFontSize(title, textMaxWidth, titleBaseFontPx)
+  // ── TITLE ─────────────────────────────────────────────────────
+  // Base = 1.3" at 300 dpi → ~390 px ≈ 130 pt — large and bold
+  const titleBasePx = Math.round(ppi * 1.3)
+  const titleFontPx = scaleFontSize(title, titleBasePx)
+
+  const titleText = typo.titleCase === 'uppercase'
+    ? title.toUpperCase()
+    : title.replace(/\b\w/g, c => c.toUpperCase())
 
   const titlePlacement: TextPlacement = {
-    text: typo.titleCase === 'uppercase'
-      ? title.toUpperCase()
-      : typo.titleCase === 'capitalize'
-        ? title.replace(/\b\w/g, c => c.toUpperCase())
-        : title,
-    x: frontStartPx + textPadding,
-    y: bleedPx + safePx + Math.round(ppi * 0.3),
+    text: titleText,
+    x: frontStartPx + pad,
+    y: bleedPx + safePx + Math.round(ppi * 0.5),
     width: textMaxWidth,
     fontSize: titleFontPx,
     fontFamily: typo.titleFont,
-    fontWeight: typo.titleWeight,
-    color: typo.titleColor,
+    fontWeight: '800',
+    color: '#FFFFFF',
     letterSpacing: typo.letterSpacing,
     lineHeight: 1.15,
     align: 'center',
   }
 
-  // Subtitle below title
+  // ── SUBTITLE ──────────────────────────────────────────────────
+  // Sits just below the title — 32% of title size
+  const subtitleFontPx = Math.round(titleFontPx * 0.32)
+  const titleLineCount = Math.ceil(titleText.length / 18)
+  const subtitleY = titlePlacement.y + titleFontPx * 1.2 * titleLineCount + Math.round(ppi * 0.15)
+
   const subtitlePlacement: TextPlacement | undefined = subtitle
     ? {
         text: subtitle,
-        x: frontStartPx + textPadding,
-        y: titlePlacement.y + titleFontPx * 1.4 * Math.ceil(title.length / 20),
+        x: frontStartPx + pad,
+        y: subtitleY,
         width: textMaxWidth,
-        fontSize: Math.round(titleFontPx * 0.38),
+        fontSize: subtitleFontPx,
         fontFamily: typo.authorFont,
         fontWeight: '400',
-        color: typo.subtitleColor,
-        letterSpacing: 0.04,
-        lineHeight: 1.3,
+        color: '#E0E0E0',
+        letterSpacing: 0.06,
+        lineHeight: 1.4,
         align: 'center',
       }
     : undefined
 
-  // Author placement: bottom of front cover
-  const authorFontPx = Math.round(ppi * 0.22)
+  // ── AUTHOR NAME ───────────────────────────────────────────────
+  // Bottom of front cover — 0.32" tall, bold, with spacing from edge
+  const authorFontPx = Math.round(ppi * 0.32)
   const authorPlacement: TextPlacement = {
-    text: authorName,
-    x: frontStartPx + textPadding,
-    y: totalHeightPx - bleedPx - safePx - authorFontPx - Math.round(ppi * 0.2),
+    text: authorName.toUpperCase(),
+    x: frontStartPx + pad,
+    y: totalHeightPx - bleedPx - safePx - authorFontPx - Math.round(ppi * 0.35),
     width: textMaxWidth,
     fontSize: authorFontPx,
     fontFamily: typo.authorFont,
-    fontWeight: '400',
-    color: typo.authorColor,
-    letterSpacing: 0.08,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.15,
     lineHeight: 1.2,
     align: 'center',
   }
 
-  // Spine text — only if spine is wide enough (>= 0.2")
+  // ── SPINE ─────────────────────────────────────────────────────
   const spineWidthPx = Math.round(dims.spineWidth * ppi)
   const hasSpineText = dims.spineWidth >= 0.2
 
   const spineTitlePlacement: TextPlacement | undefined = hasSpineText
     ? {
-        text: typo.titleCase === 'uppercase' ? title.toUpperCase() : title,
+        text: titleText,
         x: Math.round(dims.spineStartX * ppi) + Math.floor(spineWidthPx / 2),
-        y: bleedPx + safePx + Math.round(ppi * 0.3),
+        y: bleedPx + safePx + Math.round(ppi * 0.4),
         width: totalHeightPx - bleedPx * 2 - safePx * 2,
-        fontSize: Math.min(Math.round(spineWidthPx * 0.55), Math.round(ppi * 0.18)),
+        fontSize: Math.min(Math.round(spineWidthPx * 0.52), Math.round(ppi * 0.18)),
         fontFamily: typo.titleFont,
-        fontWeight: typo.titleWeight,
-        color: typo.titleColor,
+        fontWeight: '700',
+        color: '#FFFFFF',
         letterSpacing: 0.05,
         lineHeight: 1,
         align: 'left',
@@ -113,15 +119,15 @@ export function buildTypographyLayout(input: TypographyInput): TypographyLayout 
 
   const spineAuthorPlacement: TextPlacement | undefined = hasSpineText
     ? {
-        text: authorName,
+        text: authorName.toUpperCase(),
         x: Math.round(dims.spineStartX * ppi) + Math.floor(spineWidthPx / 2),
-        y: totalHeightPx - bleedPx - safePx - Math.round(ppi * 0.3),
+        y: totalHeightPx - bleedPx - safePx - Math.round(ppi * 0.35),
         width: Math.round(ppi * 1.5),
-        fontSize: Math.min(Math.round(spineWidthPx * 0.4), Math.round(ppi * 0.13)),
+        fontSize: Math.min(Math.round(spineWidthPx * 0.38), Math.round(ppi * 0.13)),
         fontFamily: typo.authorFont,
         fontWeight: '400',
-        color: typo.authorColor,
-        letterSpacing: 0.04,
+        color: '#FFFFFF',
+        letterSpacing: 0.08,
         lineHeight: 1,
         align: 'right',
         rotation: -90,

@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       subtitle: cover.subtitle ?? undefined,
       authorName: cover.authorName,
       description: cover.description ?? '',
+      authorBio: cover.authorBio ?? undefined,
     }
 
     const validation = validateExport(exportInput)
