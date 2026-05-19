@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import Link from 'next/link'
+import HistoryDownload from '@/components/HistoryDownload'
 
 export default async function HistoryPage() {
   const { userId } = await auth()
@@ -20,9 +21,12 @@ export default async function HistoryPage() {
     <div className="min-h-screen bg-gray-950 py-10 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">All Covers</h1>
-            <p className="text-gray-400 mt-1">{covers.length} cover{covers.length !== 1 ? 's' : ''} generated</p>
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="text-gray-500 hover:text-gray-300 text-sm">← Dashboard</Link>
+            <div>
+              <h1 className="text-2xl font-bold text-white">All Covers</h1>
+              <p className="text-gray-400 mt-1">{covers.length} cover{covers.length !== 1 ? 's' : ''} generated</p>
+            </div>
           </div>
           <Link href="/generate"
             className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-5 py-2.5 rounded-xl transition text-sm">
@@ -63,14 +67,14 @@ export default async function HistoryPage() {
                   <p className="text-sm font-semibold text-white truncate">{cover.title}</p>
                   <p className="text-xs text-gray-500 capitalize mt-0.5">{cover.genre} · {cover.trimSize}"</p>
                   <p className="text-xs text-gray-600 mt-0.5">{cover.pageCount} pages</p>
+                  <p className="text-xs text-gray-700 mt-2">{new Date(cover.createdAt).toLocaleDateString()}</p>
                   {cover.exports.length > 0 && (
-                    <div className="flex gap-1 mt-2">
+                    <div className="mt-2 flex flex-col gap-1">
                       {cover.exports.map((ex: { format: string; url: string; downloadCount: number }, i: number) => (
-                        <span key={i} className="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded-full uppercase">{ex.format}</span>
+                        <HistoryDownload key={i} url={ex.url} format={ex.format} title={cover.title} />
                       ))}
                     </div>
                   )}
-                  <p className="text-xs text-gray-700 mt-2">{new Date(cover.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}
