@@ -14,6 +14,9 @@ const schema = z.object({
   coverId: z.string(),
   titleFontScale: z.number().min(0.5).max(1.6).optional(),
   titleStyle: z.enum(['bold-sans', 'serif', 'serif-italic']).optional(),
+  isbn: z.string().max(30).optional(),
+  barcodeImageBase64: z.string().optional(),
+  spineWidthOverride: z.number().min(0.06).max(3).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
       paperType: cover.paperType as KDPInput['paperType'],
       coverType: cover.coverType as KDPInput['coverType'],
     }
-    const dims = calculateKDPDimensions(kdpInput)
+    const dims = calculateKDPDimensions(kdpInput, parsed.data.spineWidthOverride)
 
     const typography = buildTypographyLayout({
       title: cover.title,
@@ -70,6 +73,8 @@ export async function POST(req: NextRequest) {
       authorBio: cover.authorBio ?? undefined,
       titleFontScale: parsed.data.titleFontScale,
       titleStyle: parsed.data.titleStyle,
+      isbn: parsed.data.isbn,
+      barcodeImageBase64: parsed.data.barcodeImageBase64,
     }
 
     const validation = validateExport(exportInput)
@@ -79,7 +84,6 @@ export async function POST(req: NextRequest) {
 
     const result = await generateKDPPdf(exportInput)
 
-    // Record export
     await prisma.export.create({
       data: {
         coverId: cover.id,
@@ -90,7 +94,6 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Return PDF as binary response (Uint8Array for Web API compatibility)
     return new NextResponse(new Uint8Array(result.pdfBuffer), {
       status: 200,
       headers: {

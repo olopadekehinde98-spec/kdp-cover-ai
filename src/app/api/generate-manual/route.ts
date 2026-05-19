@@ -24,6 +24,7 @@ const schema = z.object({
   paperType: z.enum(['black_and_white', 'color', 'premium_color']),
   coverType: z.enum(['paperback', 'hardcover']),
   imageBase64: z.string().min(10), // data:image/jpeg;base64,... or data:image/png;base64,...
+  spineWidthOverride: z.number().min(0.06).max(3).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     paperType: data.paperType,
     coverType: data.coverType,
   }
-  const dims = calculateKDPDimensions(kdpInput)
+  const dims = calculateKDPDimensions(kdpInput, data.spineWidthOverride)
 
   // Auto-generate description if not provided
   let description = data.description || ''

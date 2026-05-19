@@ -24,13 +24,13 @@ function calcSpineWidth(pageCount: number, paperType: KDPInput['paperType']): nu
   }
 }
 
-export function calculateKDPDimensions(input: KDPInput): KDPDimensions {
+export function calculateKDPDimensions(input: KDPInput, spineWidthOverride?: number): KDPDimensions {
   const trim = TRIM_SIZES[input.trimSize]
   const bleed = 0.125 // Amazon standard bleed: 0.125" on all sides
   const safeZone = 0.25 // Inner safe zone: 0.25" from trim edge
   const ppi = 300 // Amazon requires 300 DPI minimum
 
-  const spineWidth = calcSpineWidth(input.pageCount, input.paperType)
+  const spineWidth = spineWidthOverride ?? calcSpineWidth(input.pageCount, input.paperType)
 
   // Full wrap: back + spine + front + bleed on all sides
   const totalWidth = trim.width * 2 + spineWidth + bleed * 2

@@ -11,6 +11,8 @@ export interface ExportInput {
   reviewQuote?: string
   titleFontScale?: number   // 0.6 – 1.4, default 1.0
   titleStyle?: 'bold-sans' | 'serif' | 'serif-italic'
+  isbn?: string             // e.g. "978-0-00-000000-0"
+  barcodeImageBase64?: string  // data:image/png;base64,... or jpeg
 }
 
 export interface ExportResult {
