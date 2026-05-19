@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import Link from 'next/link'
+import UserActions from '@/components/admin/UserActions'
 
 export default async function AdminUsersPage() {
   const { userId } = await auth()
@@ -36,6 +37,7 @@ export default async function AdminUsersPage() {
                 <th className="text-left px-5 py-3">Generations</th>
                 <th className="text-left px-5 py-3">Status</th>
                 <th className="text-left px-5 py-3">Joined</th>
+                <th className="text-left px-5 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
@@ -70,6 +72,14 @@ export default async function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-5 py-3 text-gray-500 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3">
+                    <UserActions
+                      userId={u.id}
+                      currentPlan={u.plan as 'FREE' | 'STARTER' | 'PRO' | 'AGENCY'}
+                      currentLimit={u.generationsLimit}
+                      isBanned={u.isBanned}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
