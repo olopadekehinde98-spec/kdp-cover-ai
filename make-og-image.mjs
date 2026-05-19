@@ -139,6 +139,11 @@ const svg = `
     <text x="90" y="467" fill="#6ee7b7">Free to start — no credit card needed</text>
   </g>
 
+  <!-- CTA Button -->
+  <rect x="60" y="490" width="230" height="52" rx="10" fill="#7c3aed"/>
+  <text x="175" y="522" font-family="Arial, Helvetica, sans-serif" font-size="20"
+    font-weight="700" fill="#ffffff" text-anchor="middle">Try Free — No Card Needed</text>
+
   <!-- Bottom bar -->
   <rect x="0" y="570" width="1200" height="60" fill="#7c3aed" opacity="0.15"/>
   <rect x="0" y="570" width="1200" height="2" fill="#7c3aed" opacity="0.5"/>

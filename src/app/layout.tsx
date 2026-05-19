@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://kdp-cover-ai.vercel.app'),
-  title: 'KDP Cover AI — Amazon KDP Book Cover Generator for Self-Publishers',
+  title: 'KDP Cover AI — Free AI Book Cover Generator for Amazon KDP',
   description: 'Generate professional full-wrap Amazon KDP book covers with AI in seconds. Front cover, spine & back — exact 300 DPI dimensions, ready to upload. Free to start.',
   keywords: ['Amazon KDP', 'book cover generator', 'AI book cover', 'KDP cover maker', 'self-publishing', 'print-ready PDF', 'full wrap cover'],
   icons: {
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'KDP Cover AI — Amazon KDP Book Cover Generator for Self-Publishers',
+    title: 'KDP Cover AI — Free AI Book Cover Generator for Amazon KDP',
     description: 'Generate professional full-wrap Amazon KDP book covers with AI in seconds. Front cover, spine & back — exact 300 DPI dimensions, ready to upload. Free to start.',
     type: 'website',
     url: 'https://kdp-cover-ai.vercel.app',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KDP Cover AI — Amazon KDP Book Cover Generator for Self-Publishers',
+    title: 'KDP Cover AI — Free AI Book Cover Generator for Amazon KDP',
     description: 'Generate professional full-wrap Amazon KDP book covers with AI in seconds. Front cover, spine & back — exact 300 DPI dimensions, ready to upload. Free to start.',
     images: ['https://kdp-cover-ai.vercel.app/og-image.png'],
   },
