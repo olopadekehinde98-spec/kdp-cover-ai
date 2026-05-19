@@ -31,18 +31,24 @@ export async function POST(req: NextRequest) {
     const email = data.email_addresses?.[0]?.email_address ?? ''
     const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
 
-    await prisma.user.upsert({
-      where: { clerkId: data.id },
-      update: { email, name, imageUrl: data.image_url },
-      create: {
-        clerkId: data.id,
-        email,
-        name,
-        imageUrl: data.image_url,
-        plan: 'FREE',
-        generationsLimit: 3,
-      },
-    })
+    const existing = await prisma.user.findFirst({ where: { clerkId: data.id } })
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { email, name, imageUrl: data.image_url },
+      })
+    } else {
+      await prisma.user.create({
+        data: {
+          clerkId: data.id,
+          email,
+          name,
+          imageUrl: data.image_url,
+          plan: 'FREE',
+          generationsLimit: 3,
+        },
+      })
+    }
   }
 
   if (type === 'user.updated') {
