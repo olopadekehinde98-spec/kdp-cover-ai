@@ -1,15 +1,7 @@
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib'
 import type { ExportInput, ExportResult, ExportValidation } from './types'
 
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace('#', '')
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  return [r, g, b]
-}
-
-// Fix: strip newline/tab chars — WinAnsi (Helvetica) cannot encode \n (0x000a)
+// Strip newline/tab chars — WinAnsi (Helvetica/Times) cannot encode \n (0x000a)
 function cleanText(text: string): string {
   return text.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim()
 }
@@ -77,6 +69,12 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   page.drawImage(embeddedImage, { x: 0, y: 0, width: pageWidthPt, height: pageHeightPt })
 
   // ── 2. FONTS ───────────────────────────────────────────────────
+  const style = input.titleStyle ?? 'bold-sans'
+  const titleFont = await pdfDoc.embedFont(
+    style === 'serif'        ? StandardFonts.TimesBold :
+    style === 'serif-italic' ? StandardFonts.TimesBoldItalic :
+                               StandardFonts.HelveticaBold
+  )
   const boldFont    = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
   const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const obliqueFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique)
@@ -114,78 +112,84 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   const safePt  = dims.safeZone  * PT
   const padPt   = safePt + 0.2 * PT
 
-  const frontStartPt   = dims.frontCoverStartX  * PT
-  const frontWidthPt   = dims.trimWidth          * PT
-  const backStartPt    = dims.backCoverStartX    * PT
-  const backWidthPt    = dims.trimWidth          * PT
-  const spineStartPt   = dims.spineStartX        * PT
-  const spineWidthPt   = dims.spineWidth         * PT
-  const textWidthPt    = frontWidthPt - padPt * 2
-  const backTextWidthPt = backWidthPt - padPt * 2
-  const backContentX   = backStartPt + padPt
+  const frontStartPt    = dims.frontCoverStartX * PT
+  const frontWidthPt    = dims.trimWidth         * PT
+  const backStartPt     = dims.backCoverStartX   * PT
+  const backWidthPt     = dims.trimWidth          * PT
+  const spineStartPt    = dims.spineStartX        * PT
+  const spineWidthPt    = dims.spineWidth         * PT
+  const textWidthPt     = frontWidthPt - padPt * 2
+  const backTextWidthPt = backWidthPt  - padPt * 2
+  const backContentX    = backStartPt  + padPt
 
   // ── 4. FRONT COVER ────────────────────────────────────────────
+  const t     = typography.title
+  const scale = Math.max(0.5, Math.min(1.6, input.titleFontScale ?? 1.0))
+  const titleSizePt = px2pt(t.fontSize) * scale
+  const titleLines  = wrapLines(t.text, textWidthPt, titleSizePt, titleFont)
 
-  // Dark overlay — top area behind title
+  // Dark overlay sized to the actual title text area (not a fixed strip)
+  const titleTopPt    = pdfY(t.y)
+  const titleBottomPt = titleTopPt - titleSizePt - (titleLines.length - 1) * titleSizePt * t.lineHeight
   page.drawRectangle({
-    x: frontStartPt, y: pageHeightPt - bleedPt - 4.0 * PT,
-    width: frontWidthPt, height: 3.6 * PT,
-    color: rgb(0, 0, 0), opacity: 0.58,
+    x: frontStartPt, y: titleBottomPt - 0.2 * PT,
+    width: frontWidthPt,
+    height: titleTopPt - titleBottomPt + titleSizePt + 0.4 * PT,
+    color: rgb(0, 0, 0), opacity: 0.5,
   })
 
-  // Dark overlay — bottom area behind author name
-  page.drawRectangle({
-    x: frontStartPt, y: bleedPt,
-    width: frontWidthPt, height: 1.3 * PT,
-    color: rgb(0, 0, 0), opacity: 0.58,
-  })
-
-  // TITLE — large bold white
-  const t = typography.title
-  const titleSizePt = px2pt(t.fontSize)
-  const titleLines  = wrapLines(t.text, textWidthPt, titleSizePt, boldFont)
+  // TITLE lines — top-down
   titleLines.forEach((line, i) => {
-    const yPt = pdfY(t.y) - titleSizePt - i * titleSizePt * t.lineHeight
-    drawCenteredText(line, frontStartPt + padPt, yPt, textWidthPt, titleSizePt, boldFont, [1, 1, 1])
+    const yPt = titleTopPt - titleSizePt - i * titleSizePt * t.lineHeight
+    drawCenteredText(line, frontStartPt + padPt, yPt, textWidthPt, titleSizePt, titleFont, [1, 1, 1])
   })
 
-  // SUBTITLE — oblique grey
+  // SUBTITLE — placed directly below last title line, never overlapping
   if (typography.subtitle) {
     const s = typography.subtitle
-    const subSizePt = px2pt(s.fontSize)
+    const subSizePt = px2pt(s.fontSize) * scale
     const subLines  = wrapLines(s.text, textWidthPt, subSizePt, obliqueFont)
+    const subTopPt  = titleBottomPt - 0.25 * PT
     subLines.forEach((line, i) => {
-      const yPt = pdfY(s.y) - subSizePt - i * subSizePt * s.lineHeight
+      const yPt = subTopPt - subSizePt - i * subSizePt * s.lineHeight
       drawCenteredText(line, frontStartPt + padPt, yPt, textWidthPt, subSizePt, obliqueFont, [0.88, 0.88, 0.88])
     })
   }
 
-  // Gold line above author
-  const goldLineY = pdfY(typography.author.y) + px2pt(typography.author.fontSize) + 0.14 * PT
+  // Gold decorative line above author name
+  const a = typography.author
+  const authorSizePt = px2pt(a.fontSize)
+  const authorBaseY  = pdfY(a.y) - authorSizePt
+  const goldLineY    = authorBaseY + authorSizePt + 0.25 * PT
   page.drawLine({
     start: { x: frontStartPt + padPt + textWidthPt * 0.2, y: goldLineY },
     end:   { x: frontStartPt + padPt + textWidthPt * 0.8, y: goldLineY },
     thickness: 1.5, color: rgb(0.85, 0.72, 0.35),
   })
 
+  // Dark overlay behind author
+  page.drawRectangle({
+    x: frontStartPt, y: bleedPt,
+    width: frontWidthPt, height: authorSizePt + 0.6 * PT,
+    color: rgb(0, 0, 0), opacity: 0.58,
+  })
+
   // AUTHOR NAME — bold white all-caps
-  const a = typography.author
-  const authorSizePt = px2pt(a.fontSize)
-  drawCenteredText(a.text, frontStartPt + padPt, pdfY(a.y) - authorSizePt, textWidthPt, authorSizePt, boldFont, [1, 1, 1])
+  drawCenteredText(a.text, frontStartPt + padPt, authorBaseY, textWidthPt, authorSizePt, boldFont, [1, 1, 1])
 
   // ── 5. SPINE ──────────────────────────────────────────────────
   if (dims.spineWidth >= 0.2) {
-    const spineCX = spineStartPt + spineWidthPt / 2
+    const spineCX       = spineStartPt + spineWidthPt / 2
     const maxSpineFontPt = Math.min(spineWidthPt * 0.75, 10)
 
-    // Dark spine background so text is always readable
+    // Dark spine background
     page.drawRectangle({
       x: spineStartPt, y: bleedPt,
       width: spineWidthPt, height: pageHeightPt - bleedPt * 2,
       color: rgb(0, 0, 0), opacity: 0.45,
     })
 
-    // Spine title — centered, reads bottom-to-top
+    // Spine title — starts near bottom safe zone, reads bottom-to-top
     const spineTitle = cleanText(t.text)
     page.drawText(spineTitle, {
       x: spineCX - maxSpineFontPt * 0.35,
@@ -196,12 +200,14 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
       rotate: degrees(90),
     })
 
-    // Spine author — at top of spine, reads bottom-to-top
+    // Spine author — fix: calculate text width so it ENDS at the top safe zone (no clipping)
     const spineAuthor = cleanText(input.authorName.toUpperCase())
-    const spineAuthorFontPt = Math.min(maxSpineFontPt * 0.75, 8)
+    const spineAuthorFontPt   = Math.min(maxSpineFontPt * 0.75, 8)
+    const spineAuthorTextWidth = boldFont.widthOfTextAtSize(spineAuthor, spineAuthorFontPt)
+    const spineAuthorY = pageHeightPt - bleedPt - safePt - spineAuthorTextWidth - 0.15 * PT
     page.drawText(spineAuthor, {
       x: spineCX - spineAuthorFontPt * 0.35,
-      y: pageHeightPt - bleedPt - safePt - 0.3 * PT,
+      y: spineAuthorY,
       size: spineAuthorFontPt,
       font: boldFont,
       color: rgb(0.85, 0.72, 0.35),
@@ -211,7 +217,6 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
 
   // ── 6. BACK COVER ────────────────────────────────────────────
 
-  // Dark overlay over full back cover
   page.drawRectangle({
     x: backStartPt, y: bleedPt,
     width: backWidthPt, height: pageHeightPt - bleedPt * 2,
@@ -223,11 +228,10 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   const bioSizePt      = 8.5
   const lineHeightDesc = descSizePt * 1.6
   const lineHeightBio  = bioSizePt  * 1.6
-  const boxPad         = 0.15 * PT  // inner padding inside each box
+  const boxPad         = 0.15 * PT
 
   let curY = pageHeightPt - bleedPt - safePt - 0.4 * PT
 
-  // Helper: draw a labeled section box (gold border, label, text inside)
   function drawSectionBox(
     label: string, bodyText: string, font: typeof regularFont,
     bodySizePt: number, lineH: number, maxLines: number
@@ -235,7 +239,6 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
     const bodyLines = wrapLines(bodyText, backTextWidthPt - boxPad * 2, bodySizePt, font).slice(0, maxLines)
     const boxHeight = labelSizePt + 0.12 * PT + boxPad + bodyLines.length * lineH + boxPad + 0.1 * PT
 
-    // Box background
     page.drawRectangle({
       x: backContentX, y: curY - boxHeight,
       width: backTextWidthPt, height: boxHeight,
@@ -244,7 +247,6 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
       borderWidth: 0.8,
     })
 
-    // Label inside top of box
     page.drawText(label, {
       x: backContentX + boxPad,
       y: curY - labelSizePt - boxPad * 0.5,
@@ -252,7 +254,6 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
       color: rgb(0.85, 0.72, 0.35),
     })
 
-    // Gold underline below label
     const underlineY = curY - labelSizePt - boxPad * 0.5 - 0.1 * PT
     page.drawLine({
       start: { x: backContentX + boxPad, y: underlineY },
@@ -260,7 +261,6 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
       thickness: 0.6, color: rgb(0.85, 0.72, 0.35),
     })
 
-    // Body text
     let textY = underlineY - 0.15 * PT
     bodyLines.forEach(line => {
       page.drawText(line, {
@@ -272,21 +272,19 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
       textY -= lineH
     })
 
-    curY -= boxHeight + 0.28 * PT // gap between boxes
+    curY -= boxHeight + 0.28 * PT
   }
 
-  // ABOUT THE BOOK box
   if (input.description) {
     drawSectionBox('ABOUT THE BOOK', input.description, regularFont, descSizePt, lineHeightDesc, 10)
   }
 
-  // ABOUT THE AUTHOR box
   const bioText = input.authorBio ?? ''
   if (bioText) {
     drawSectionBox('ABOUT THE AUTHOR', bioText, obliqueFont, bioSizePt, lineHeightBio, 6)
   }
 
-  // ── 7. BARCODE WHITE BOX — bottom-right, reserved for Amazon ──
+  // ── 7. BARCODE WHITE BOX ──────────────────────────────────────
   const bc = input.backCover.barcodeBox
   page.drawRectangle({
     x: px2pt(bc.x), y: pdfY(bc.y + bc.height),

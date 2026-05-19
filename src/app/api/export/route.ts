@@ -10,7 +10,11 @@ import { buildTypographyLayout } from '@/lib/typography-engine/renderer'
 import { buildBackCoverLayout } from '@/lib/back-cover-engine'
 import type { KDPInput } from '@/lib/kdp-engine/types'
 
-const schema = z.object({ coverId: z.string() })
+const schema = z.object({
+  coverId: z.string(),
+  titleFontScale: z.number().min(0.5).max(1.6).optional(),
+  titleStyle: z.enum(['bold-sans', 'serif', 'serif-italic']).optional(),
+})
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -64,6 +68,8 @@ export async function POST(req: NextRequest) {
       authorName: cover.authorName,
       description: cover.description ?? '',
       authorBio: cover.authorBio ?? undefined,
+      titleFontScale: parsed.data.titleFontScale,
+      titleStyle: parsed.data.titleStyle,
     }
 
     const validation = validateExport(exportInput)
