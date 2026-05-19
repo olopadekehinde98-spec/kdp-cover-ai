@@ -89,7 +89,7 @@ export async function generateBookDescription(
   prompt: string
 ): Promise<string> {
   if (!process.env.OPENAI_API_KEY) {
-    return `An gripping ${genre} that will keep you turning pages. ${title} takes readers on an unforgettable journey.`
+    return `A gripping ${genre} that will keep you turning pages. ${title} takes readers on an unforgettable journey.`
   }
 
   const { default: OpenAI } = await import('openai')

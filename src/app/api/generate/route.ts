@@ -23,6 +23,7 @@ const schema = z.object({
   pageCount: z.number().int().min(24).max(828),
   paperType: z.enum(['black_and_white', 'color', 'premium_color']),
   coverType: z.enum(['paperback', 'hardcover']),
+  spineWidthOverride: z.number().min(0.06).max(3).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
       paperType: data.paperType,
       coverType: data.coverType,
     }
-    const dims = calculateKDPDimensions(kdpInput)
+    const dims = calculateKDPDimensions(kdpInput, data.spineWidthOverride)
 
     const genInput: GenerationInput = {
       title: data.title,

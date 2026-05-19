@@ -334,6 +334,9 @@ export default function GeneratePage() {
       <div className="space-y-4">
         {error && <div className="mb-4 p-4 bg-red-900/40 border border-red-700 rounded-xl text-red-300 text-sm">{error}</div>}
 
+        {/* Result screen — works for ALL methods including Method 3 */}
+        {step === 99 && result && renderResult()}
+
         {step === 2 && (
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6 space-y-5">
             <h2 className="text-xl font-semibold text-white">Book Information & Style</h2>
@@ -658,7 +661,7 @@ export default function GeneratePage() {
               className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
               {exporting ? <><Spinner />Exporting...</> : '⬇ Download KDP PDF'}
             </button>
-            <button onClick={() => { setStep(method === 'upload' || kdpDesign === 'upload' ? 3 : 3); setResult(null) }}
+            <button onClick={() => { setStep(3); setResult(null) }}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 rounded-xl transition">
               Regenerate
             </button>

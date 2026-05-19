@@ -13,6 +13,13 @@ export const metadata: Metadata = {
     title: 'KDP Cover AI — Amazon Book Covers in Seconds',
     description: 'Generate professional, KDP-compliant book covers with AI. Exact dimensions, full-wrap, ready to upload.',
     type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'KDP Cover AI' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'KDP Cover AI — Amazon Book Covers in Seconds',
+    description: 'Generate professional, KDP-compliant book covers with AI. Full-wrap, exact KDP dimensions, ready to upload.',
+    images: ['/og-image.png'],
   },
 }
 

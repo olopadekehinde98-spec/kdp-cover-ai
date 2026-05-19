@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         name,
         imageUrl: data.image_url,
         plan: 'FREE',
-        generationsLimit: 999,
+        generationsLimit: 3,
       },
     })
   }
