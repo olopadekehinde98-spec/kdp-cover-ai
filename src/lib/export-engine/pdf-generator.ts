@@ -76,9 +76,12 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   // ── 2. FONTS ───────────────────────────────────────────────────
   const style = input.titleStyle ?? 'bold-sans'
   const titleFont = await pdfDoc.embedFont(
-    style === 'serif'        ? StandardFonts.TimesRomanBold :
-    style === 'serif-italic' ? StandardFonts.TimesRomanBoldItalic :
-                               StandardFonts.HelveticaBold
+    style === 'serif'         ? StandardFonts.TimesRomanBold :
+    style === 'serif-italic'  ? StandardFonts.TimesRomanBoldItalic :
+    style === 'serif-light'   ? StandardFonts.TimesRomanItalic :
+    style === 'sans-oblique'  ? StandardFonts.HelveticaBoldOblique :
+    style === 'courier-bold'  ? StandardFonts.CourierBold :
+                                StandardFonts.HelveticaBold
   )
   const boldFont    = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
   const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica)

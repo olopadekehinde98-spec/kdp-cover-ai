@@ -36,12 +36,12 @@ const FONT_SCALE_LABELS: Record<string, string> = {
 }
 
 type Method = 'ai' | 'upload' | 'kdp'
-type TitleStyle = 'bold-sans' | 'serif' | 'serif-italic'
+type TitleStyle = 'bold-sans' | 'serif' | 'serif-italic' | 'sans-oblique' | 'courier-bold' | 'serif-light'
 
 interface FormData {
   trimSize: string; pageCount: number; paperType: string; coverType: string
   title: string; subtitle: string; authorName: string; genre: string
-  prompt: string; description: string; authorBio: string
+  prompt: string; description: string; authorBio: string; reviewQuote: string; reviewAttribution: string
   titleFontScale: number; titleStyle: TitleStyle
   spineWidthOverride: string  // for Method 3 — exact spine from Amazon KDP
 }
@@ -49,7 +49,7 @@ interface FormData {
 const INITIAL: FormData = {
   trimSize: '6x9', pageCount: 200, paperType: 'black_and_white', coverType: 'paperback',
   title: '', subtitle: '', authorName: '', genre: 'thriller',
-  prompt: '', description: '', authorBio: '',
+  prompt: '', description: '', authorBio: '', reviewQuote: '', reviewAttribution: '',
   titleFontScale: 1.0, titleStyle: 'bold-sans',
   spineWidthOverride: '',
 }
@@ -115,7 +115,8 @@ export default function GeneratePage() {
       const spineOverride = form.spineWidthOverride ? parseFloat(form.spineWidthOverride) : undefined
       const res = await fetch('/api/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, pageCount: Number(form.pageCount), spineWidthOverride: spineOverride }),
+        body: JSON.stringify({ ...form, pageCount: Number(form.pageCount), spineWidthOverride: spineOverride,
+          reviewQuote: form.reviewQuote || undefined, reviewAttribution: form.reviewAttribution || undefined }),
       })
       let data: any
       try { data = await res.json() } catch { throw new Error('Generation timed out. Please try again.') }
@@ -139,6 +140,7 @@ export default function GeneratePage() {
           trimSize: form.trimSize, pageCount: Number(form.pageCount),
           paperType: form.paperType, coverType: form.coverType,
           imageBase64: uploadedImage, spineWidthOverride: spineOverride,
+          reviewQuote: form.reviewQuote || undefined, reviewAttribution: form.reviewAttribution || undefined,
         }),
       })
       let data: any
@@ -383,17 +385,32 @@ export default function GeneratePage() {
                   rows={3} placeholder="e.g. Jane Smith is a New York Times bestselling thriller author. She lives in London with her family."
                   className={inp('resize-none')} />
               </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Review Quote <span className="text-gray-600">(optional — appears on back cover)</span></label>
+                <textarea value={form.reviewQuote} onChange={e => update('reviewQuote', e.target.value)}
+                  rows={2} placeholder='e.g. "A masterpiece of suspense that kept me up all night."'
+                  className={inp('resize-none')} />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Quote Attribution <span className="text-gray-600">(optional — who said it)</span></label>
+                <input value={form.reviewAttribution} onChange={e => update('reviewAttribution', e.target.value)}
+                  placeholder="e.g. — Publishers Weekly"
+                  className={inp()} />
+              </div>
             </div>
 
             <div className="border-t border-gray-800 pt-4 space-y-4">
               <p className="text-sm font-semibold text-gray-300">Front Cover Style</p>
               <div>
                 <label className="block text-sm text-gray-400 mb-3">Title Font Style</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: 'bold-sans', label: 'Bold Modern', desc: 'Helvetica — powerful' },
-                    { value: 'serif', label: 'Classic Serif', desc: 'Times — traditional' },
-                    { value: 'serif-italic', label: 'Elegant Italic', desc: 'Times Italic — literary' },
+                    { value: 'bold-sans',    label: 'Bold Modern',     desc: 'Helvetica Bold — clean, powerful' },
+                    { value: 'serif',        label: 'Classic Serif',   desc: 'Times Roman Bold — traditional' },
+                    { value: 'serif-italic', label: 'Elegant Italic',  desc: 'Times Bold Italic — literary' },
+                    { value: 'serif-light',  label: 'Serif Light',     desc: 'Times Italic — soft & refined' },
+                    { value: 'sans-oblique', label: 'Modern Slanted',  desc: 'Helvetica Oblique — dynamic' },
+                    { value: 'courier-bold', label: 'Typewriter',      desc: 'Courier Bold — retro, gritty' },
                   ].map(s => (
                     <button key={s.value} onClick={() => update('titleStyle', s.value)}
                       className={`p-3 rounded-xl border text-left transition
