@@ -23,11 +23,16 @@ model User {
   lsSubscriptionId     String?  @unique
   lsVariantId          String?
 
-  // Paystack
+  // Paystack (kept so existing rows don't break)
   paystackCustomerId   String?
-  paystackSubCode      String?  @unique  // subscription_code
-  paystackEmailToken   String?           // needed to cancel subscription
-  paystackPlanCode     String?           // PLN_xxxx
+  paystackSubCode      String?  @unique
+  paystackEmailToken   String?
+  paystackPlanCode     String?
+
+  // Flutterwave
+  flwCustomerId        String?
+  flwSubscriptionId    String?  @unique
+  flwPlanId            String?
 
   // Referral system
   referralCode         String?  @unique  // user's own code to share
