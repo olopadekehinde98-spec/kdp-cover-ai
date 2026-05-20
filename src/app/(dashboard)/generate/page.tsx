@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const GENRES = [
@@ -58,7 +58,16 @@ function inp(cls = '') {
   return `w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-violet-500 ${cls}`
 }
 
-export default function GeneratePage() {
+// Wrap in Suspense because useSearchParams() requires it in Next.js 15+
+export default function GeneratePageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
+      <GeneratePage />
+    </Suspense>
+  )
+}
+
+function GeneratePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fromCoverId = searchParams.get('from')
@@ -71,7 +80,6 @@ export default function GeneratePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<any>(null)
-  const [exporting, setExporting] = useState(false)
 
   // Upload state
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
@@ -184,15 +192,18 @@ export default function GeneratePage() {
     finally { setLoading(false) }
   }
 
-  async function handleExport() {
+  const [exportingFormat, setExportingFormat] = useState<string | null>(null)
+
+  async function handleExport(format: 'pdf' | 'png' | 'jpg' = 'pdf') {
     if (!result?.coverId) return
-    setExporting(true); setError('')
+    setExportingFormat(format); setError('')
     try {
       const spineOverride = form.spineWidthOverride ? parseFloat(form.spineWidthOverride) : undefined
       const res = await fetch('/api/export', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           coverId: result.coverId,
+          format,
           titleFontScale: form.titleFontScale, titleStyle: form.titleStyle,
           isbn: isbn || undefined,
           barcodeImageBase64: barcodeImage || undefined,
@@ -209,10 +220,11 @@ export default function GeneratePage() {
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url
-      a.download = `${form.title || 'cover'}-kdp-cover.pdf`
+      const ext = format === 'pdf' ? 'pdf' : format === 'jpg' ? 'jpg' : 'png'
+      a.download = `${form.title || 'cover'}-kdp-cover.${ext}`
       a.click(); URL.revokeObjectURL(url)
     } catch (e: any) { setError(e.message) }
-    finally { setExporting(false) }
+    finally { setExportingFormat(null) }
   }
 
   function resetAll() { setMethod(null); setStep(1); setResult(null); setKdpSubStep('specs'); setKdpDesign(null); setUploadedImage(null); setUploadFileName(''); setIsbn(''); setBarcodeImage(null); setBarcodeFileName(''); setError('') }
@@ -708,14 +720,36 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button onClick={handleExport} disabled={exporting}
-              className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
-              {exporting ? <><Spinner />Exporting...</> : '⬇ Download KDP PDF'}
-            </button>
+          {/* Download format buttons */}
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Download Format</p>
+            <div className="grid grid-cols-3 gap-3">
+              <button onClick={() => handleExport('pdf')} disabled={!!exportingFormat}
+                className="flex flex-col items-center gap-1.5 bg-green-900/40 hover:bg-green-800/50 border border-green-700/50 disabled:opacity-50 text-green-300 font-bold py-4 rounded-xl transition">
+                {exportingFormat === 'pdf' ? <Spinner /> : <span className="text-2xl">📄</span>}
+                <span className="text-xs">KDP PDF</span>
+                <span className="text-xs text-green-500 font-normal">Print-ready</span>
+              </button>
+              <button onClick={() => handleExport('png')} disabled={!!exportingFormat}
+                className="flex flex-col items-center gap-1.5 bg-blue-900/40 hover:bg-blue-800/50 border border-blue-700/50 disabled:opacity-50 text-blue-300 font-bold py-4 rounded-xl transition">
+                {exportingFormat === 'png' ? <Spinner /> : <span className="text-2xl">🖼️</span>}
+                <span className="text-xs">PNG Image</span>
+                <span className="text-xs text-blue-500 font-normal">High-res</span>
+              </button>
+              <button onClick={() => handleExport('jpg')} disabled={!!exportingFormat}
+                className="flex flex-col items-center gap-1.5 bg-violet-900/40 hover:bg-violet-800/50 border border-violet-700/50 disabled:opacity-50 text-violet-300 font-bold py-4 rounded-xl transition">
+                {exportingFormat === 'jpg' ? <Spinner /> : <span className="text-2xl">📸</span>}
+                <span className="text-xs">JPG Image</span>
+                <span className="text-xs text-violet-500 font-normal">Smaller file</span>
+              </button>
+            </div>
+            <p className="text-xs text-gray-600">PDF = for KDP upload · PNG/JPG = for social media, mockups, or editing</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-2">
             <button onClick={() => { setStep(3); setResult(null) }}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 rounded-xl transition">
-              Regenerate
+              🔄 Regenerate
             </button>
             <button onClick={() => router.push('/dashboard')}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 rounded-xl transition">

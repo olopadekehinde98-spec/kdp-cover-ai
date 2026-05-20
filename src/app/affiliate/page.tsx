@@ -10,6 +10,13 @@ const TIERS = [
   { label: 'Level 4', range: '60+ active users',     rates: { starter: 0.18, pro: 0.30, agency: 0.25 } },
 ]
 
+// How many months you earn commission PER referred user, per plan
+const PLAN_DURATION: Record<string, number> = {
+  starter: 6,
+  pro:     3,
+  agency:  6,
+}
+
 const PLANS = [
   { key: 'starter', name: 'Starter', price: 9,  color: 'blue' },
   { key: 'pro',     name: 'Pro',     price: 29, color: 'violet' },
@@ -17,15 +24,16 @@ const PLANS = [
 ]
 
 const RULES = [
-  { rule: 'Cookie Duration',    detail: '60 days — if someone clicks your link and subscribes within 60 days, you earn the commission.' },
-  { rule: 'Qualified Referral', detail: 'Only paying subscribers count toward your tier. Free accounts do not count.' },
-  { rule: 'Tier Calculation',   detail: 'Your tier is calculated on the 1st of each month based on how many of your referrals are actively paying.' },
-  { rule: 'Holding Period',     detail: '30 days — commissions are held for 30 days to account for refunds and chargebacks.' },
-  { rule: 'Payout Date',        detail: 'The 15th of every month for the previous month\'s approved commissions.' },
-  { rule: 'Minimum Payout',     detail: '$20 minimum before a payout is issued. Unpaid balance rolls over to next month.' },
-  { rule: 'Payment Method',     detail: 'PayPal only. You must have a verified PayPal account to receive payment.' },
-  { rule: 'Chargeback Rule',    detail: 'If a referred user requests a refund, the commission for that payment is reversed.' },
-  { rule: 'Self-referral',      detail: 'You may not refer yourself or use fake accounts. Violations result in permanent ban.' },
+  { rule: 'Cookie Duration',       detail: '60 days — if someone clicks your link and subscribes within 60 days, you earn the commission.' },
+  { rule: 'Qualified Referral',    detail: 'Only paying subscribers count toward your tier. Free accounts do not count.' },
+  { rule: 'Commission Duration',   detail: 'You earn on each referred user for a limited time: Starter = 6 months, Pro = 3 months, Agency = 6 months. After this period, commission on that user ends.' },
+  { rule: 'Tier Calculation',      detail: 'Your tier is calculated on the 1st of each month based on how many of your referrals are actively paying.' },
+  { rule: 'Holding Period',        detail: '30 days — commissions are held for 30 days to account for refunds and chargebacks.' },
+  { rule: 'Payout Date',           detail: "The 15th of every month for the previous month's approved commissions." },
+  { rule: 'Minimum Payout',        detail: '$20 minimum before a payout is issued. Unpaid balance rolls over to next month.' },
+  { rule: 'Payment Method',        detail: 'PayPal only. You must have a verified PayPal account to receive payment.' },
+  { rule: 'Chargeback Rule',       detail: 'If a referred user requests a refund, the commission for that payment is reversed.' },
+  { rule: 'Self-referral',         detail: 'You may not refer yourself or use fake accounts. Violations result in permanent ban.' },
 ]
 
 const HOW = [
@@ -103,7 +111,9 @@ export default function AffiliatePage() {
                 <th className="text-left px-5 py-4 text-gray-400 font-medium">Active Users</th>
                 {PLANS.map(p => (
                   <th key={p.key} className={`text-center px-5 py-4 font-bold ${planColors[p.color]}`}>
-                    {p.name}<br/><span className="font-normal text-gray-500 text-xs">${p.price}/mo</span>
+                    {p.name}<br/>
+                    <span className="font-normal text-gray-500 text-xs">${p.price}/mo</span><br/>
+                    <span className="font-normal text-gray-600 text-xs">{PLAN_DURATION[p.key]}mo max</span>
                   </th>
                 ))}
               </tr>
@@ -123,10 +133,12 @@ export default function AffiliatePage() {
                   {PLANS.map(p => {
                     const rate = tier.rates[p.key as keyof typeof tier.rates]
                     const earn = p.price * rate
+                    const maxTotal = earn * PLAN_DURATION[p.key]
                     return (
                       <td key={p.key} className="px-5 py-4 text-center">
                         <div className={`font-bold ${planColors[p.color]}`}>{(rate * 100).toFixed(0)}%</div>
-                        <div className="text-gray-500 text-xs font-mono">${earn.toFixed(2)}/user/mo</div>
+                        <div className="text-gray-500 text-xs font-mono">${earn.toFixed(2)}/mo</div>
+                        <div className="text-gray-600 text-xs font-mono">${maxTotal.toFixed(2)} max</div>
                       </td>
                     )
                   })}
@@ -139,27 +151,34 @@ export default function AffiliatePage() {
 
       {/* What you earn at max tier */}
       <section className="max-w-5xl mx-auto px-6 py-4">
-        <h2 className="text-xl font-bold text-white mb-4">At Level 4 (60+ users) — Your monthly earnings</h2>
+        <h2 className="text-xl font-bold text-white mb-1">At Level 4 (60+ users) — Earnings per referred user</h2>
+        <p className="text-gray-500 text-sm mb-4">Commission duration: Starter = 6 months · Pro = 3 months · Agency = 6 months</p>
         <div className="grid md:grid-cols-3 gap-4">
           {PLANS.map(p => {
-            const rate = TIERS[3].rates[p.key as keyof typeof TIERS[3]['rates']]
-            const earn = p.price * rate
-            const biz  = p.price * 0.95 - earn
+            const rate     = TIERS[3].rates[p.key as keyof typeof TIERS[3]['rates']]
+            const earn     = p.price * rate
+            const months   = PLAN_DURATION[p.key]
+            const maxUser  = earn * months
+            const biz      = p.price * 0.95 - earn
             return (
               <div key={p.key} className={`border rounded-2xl p-5 ${planBg[p.color]}`}>
-                <p className={`text-sm font-bold mb-3 ${planColors[p.color]}`}>{p.name} Plan — ${p.price}/mo</p>
+                <p className={`text-sm font-bold mb-3 ${planColors[p.color]}`}>{p.name} — ${p.price}/mo · {months}mo</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Per user you earn</span>
-                    <span className="text-white font-mono font-bold">${earn.toFixed(2)}/mo</span>
+                    <span className="text-gray-400">Per user / month</span>
+                    <span className="text-white font-mono font-bold">${earn.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Max per user ({months}mo)</span>
+                    <span className={`font-mono font-bold ${planColors[p.color]}`}>${maxUser.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Platform keeps</span>
                     <span className="text-green-400 font-mono font-bold">${biz.toFixed(2)}/mo</span>
                   </div>
                   <div className="border-t border-gray-700 pt-2 flex justify-between">
-                    <span className="text-gray-400">At 60 referrals</span>
-                    <span className={`font-mono font-bold ${planColors[p.color]}`}>${(earn * 60).toFixed(0)}/mo</span>
+                    <span className="text-gray-400">60 users × {months}mo max</span>
+                    <span className={`font-mono font-bold ${planColors[p.color]}`}>${(maxUser * 60).toFixed(0)}</span>
                   </div>
                 </div>
               </div>

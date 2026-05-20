@@ -12,6 +12,7 @@ import type { KDPInput } from '@/lib/kdp-engine/types'
 
 const schema = z.object({
   coverId: z.string(),
+  format: z.enum(['pdf', 'png', 'jpg']).optional().default('pdf'),
   titleFontScale: z.number().min(0.5).max(1.6).optional(),
   titleStyle: z.enum(['bold-sans', 'serif', 'serif-italic', 'sans-oblique', 'courier-bold', 'serif-light']).optional(),
   isbn: z.string().max(30).optional(),
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest) {
 
   if (!cover) return NextResponse.json({ error: 'Cover not found' }, { status: 404 })
   if (!cover.imageUrl) return NextResponse.json({ error: 'Cover image not ready' }, { status: 422 })
+
+  const format = parsed.data.format ?? 'pdf'
 
   try {
     const kdpInput: KDPInput = {
@@ -87,7 +90,45 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await generateKDPPdf(exportInput)
+    const safeName = encodeURIComponent(cover.title.replace(/[^a-z0-9]/gi, '-').toLowerCase())
 
+    // ---- PNG / JPG export ----
+    if (format === 'png' || format === 'jpg') {
+      const imgBuffer = result.pngPreviewBuffer   // already generated at 300dpi
+      const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png'
+
+      await prisma.export.upsert({
+        where: { id: `${cover.id}-${format}` },
+        create: {
+          id: `${cover.id}-${format}`,
+          coverId: cover.id,
+          userId: user.id,
+          format,
+          url: `exports/${cover.id}.${format}`,
+          fileSizeBytes: imgBuffer.length,
+        },
+        update: { fileSizeBytes: imgBuffer.length },
+      }).catch(() => prisma.export.create({
+        data: {
+          coverId: cover.id,
+          userId: user.id,
+          format,
+          url: `exports/${cover.id}.${format}`,
+          fileSizeBytes: imgBuffer.length,
+        },
+      }))
+
+      return new NextResponse(new Uint8Array(imgBuffer), {
+        status: 200,
+        headers: {
+          'Content-Type': mimeType,
+          'Content-Disposition': `attachment; filename="${safeName}-kdp-cover.${format}"`,
+          'Content-Length': imgBuffer.length.toString(),
+        },
+      })
+    }
+
+    // ---- PDF export (default) ----
     await prisma.export.create({
       data: {
         coverId: cover.id,
@@ -102,7 +143,7 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(cover.title)}-kdp-cover.pdf"`,
+        'Content-Disposition': `attachment; filename="${safeName}-kdp-cover.pdf"`,
         'Content-Length': result.fileSizeBytes.toString(),
         'X-KDP-Width': `${result.widthPx}px`,
         'X-KDP-Height': `${result.heightPx}px`,
