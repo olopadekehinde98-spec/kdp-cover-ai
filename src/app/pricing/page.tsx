@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
 
 const PLANS = [
   {
@@ -85,23 +87,9 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Nav */}
-      <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">K</div>
-          <span className="font-semibold text-white">KDP Cover AI</span>
-        </Link>
-        <div className="flex gap-4 text-sm items-center">
-          <Link href="/affiliate" className="text-gray-400 hover:text-white transition">Affiliates</Link>
-          <Link href="/sign-in" className="text-gray-400 hover:text-white transition">Sign In</Link>
-          <Link href="/sign-up" className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl transition">
-            Start Free
-          </Link>
-        </div>
-      </nav>
-
-      <div className="max-w-5xl mx-auto px-6 py-20">
+    <div className="min-h-screen bg-gray-950 flex flex-col">
+      <SiteHeader />
+      <div className="flex-1 max-w-5xl mx-auto px-6 py-20 w-full">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -256,16 +244,7 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-900 px-6 py-8 text-center text-sm text-gray-600">
-        <div className="flex items-center justify-center gap-6 mb-4">
-          <Link href="/" className="hover:text-gray-400 transition">Home</Link>
-          <Link href="/affiliate" className="hover:text-gray-400 transition">Affiliates</Link>
-          <Link href="/sign-in" className="hover:text-gray-400 transition">Sign In</Link>
-          <Link href="/sign-up" className="hover:text-gray-400 transition">Sign Up</Link>
-        </div>
-        <p>© {new Date().getFullYear()} KDP Cover AI. Payments processed securely by Lemon Squeezy.</p>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
+import AffiliateCTA from '@/components/AffiliateCTA'
 
 // Commission matrix: [tier index][plan index] = percentage
 const TIERS = [
@@ -75,10 +76,7 @@ export default function AffiliatePage() {
           Start at 10% and grow to 30% as your referrals scale.
           Different rates for each plan — the bigger the plan, the bigger your payout.
         </p>
-        <Link href="/sign-up"
-          className="inline-flex bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 py-4 rounded-2xl text-lg transition shadow-lg shadow-amber-900/40">
-          Get Your Referral Link Free →
-        </Link>
+        <AffiliateCTA label="Get Your Referral Link Free →" size="lg" variant="amber" />
         <p className="text-sm text-gray-600 mt-4">Paid monthly via PayPal · Min $20 · 60-day cookie</p>
       </section>
 
@@ -240,10 +238,7 @@ export default function AffiliatePage() {
       <section className="max-w-2xl mx-auto px-6 py-20 text-center">
         <h2 className="text-4xl font-black text-white mb-4">Start at 10%. Scale to 30%.</h2>
         <p className="text-gray-400 mb-8">No cap. No gimmicks. Real recurring monthly income.</p>
-        <Link href="/sign-up"
-          className="inline-flex bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 py-4 rounded-2xl text-xl transition">
-          Join Free — Get Your Link →
-        </Link>
+        <AffiliateCTA label="Join Free — Get Your Link →" size="lg" variant="amber" />
       </section>
 
       <SiteFooter />

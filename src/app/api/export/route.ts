@@ -92,37 +92,37 @@ export async function POST(req: NextRequest) {
     const result = await generateKDPPdf(exportInput)
     const safeName = encodeURIComponent(cover.title.replace(/[^a-z0-9]/gi, '-').toLowerCase())
 
-    // ---- PNG / JPG export ----
+    // ---- PNG / JPG export — return the full-wrap AI-generated cover image ----
     if (format === 'png' || format === 'jpg') {
-      const imgBuffer = result.pngPreviewBuffer   // already generated at 300dpi
-      const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png'
+      // The full-wrap AI image is stored in cover.imageUrl (base64 or URL)
+      let imgBuffer: Buffer
 
-      await prisma.export.upsert({
-        where: { id: `${cover.id}-${format}` },
-        create: {
-          id: `${cover.id}-${format}`,
-          coverId: cover.id,
-          userId: user.id,
-          format,
-          url: `exports/${cover.id}.${format}`,
-          fileSizeBytes: imgBuffer.length,
-        },
-        update: { fileSizeBytes: imgBuffer.length },
-      }).catch(() => prisma.export.create({
-        data: {
-          coverId: cover.id,
-          userId: user.id,
-          format,
-          url: `exports/${cover.id}.${format}`,
-          fileSizeBytes: imgBuffer.length,
-        },
-      }))
+      if (cover.imageUrl.startsWith('data:')) {
+        // base64 stored in DB — decode it
+        const base64 = cover.imageUrl.split(',')[1]
+        if (!base64) throw new Error('Invalid image data')
+        imgBuffer = Buffer.from(base64, 'base64')
+      } else {
+        // URL — fetch it
+        const res = await fetch(cover.imageUrl)
+        if (!res.ok) throw new Error('Could not fetch cover image')
+        const arr = await res.arrayBuffer()
+        imgBuffer = Buffer.from(arr)
+      }
+
+      // Determine the actual mime type from the stored image
+      const storedMime = cover.imageUrl.startsWith('data:')
+        ? (cover.imageUrl.split(';')[0].split(':')[1] ?? 'image/jpeg')
+        : 'image/jpeg'
+
+      const mimeType = storedMime.includes('png') ? 'image/png' : 'image/jpeg'
+      const ext = mimeType === 'image/png' ? 'png' : 'jpg'
 
       return new NextResponse(new Uint8Array(imgBuffer), {
         status: 200,
         headers: {
           'Content-Type': mimeType,
-          'Content-Disposition': `attachment; filename="${safeName}-kdp-cover.${format}"`,
+          'Content-Disposition': `attachment; filename="${safeName}-kdp-cover-fullwrap.${ext}"`,
           'Content-Length': imgBuffer.length.toString(),
         },
       })

@@ -100,18 +100,27 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   function px2pt(px: number): number { return (px / dims.ppi) * PT }
   function pdfY(pixelY: number): number { return pageHeightPt - px2pt(pixelY) }
 
+  /** Draw text centered within a zone defined by (startX, zoneWidth) */
   function drawCenteredText(
-    text: string, xPt: number, yPt: number, widthPt: number,
-    sizePt: number, font: typeof boldFont, color: [number, number, number]
+    text: string,
+    startX: number,   // left edge of the zone (e.g. frontStartPt)
+    zoneWidth: number, // full width to center within (e.g. frontWidthPt)
+    yPt: number,
+    sizePt: number,
+    font: typeof boldFont,
+    color: [number, number, number]
   ) {
     const safe = cleanText(text)
+    if (!safe) return
     const tw = font.widthOfTextAtSize(safe, sizePt)
-    const cx = xPt + (widthPt - tw) / 2
+    // Center within the zone; if text wider than zone, still center it
+    const cx = startX + (zoneWidth - tw) / 2
     page.drawText(safe, { x: cx, y: yPt, size: sizePt, font, color: rgb(...color) })
   }
 
   function wrapLines(rawText: string, widthPt: number, sizePt: number, font: typeof boldFont): string[] {
     const text = cleanText(rawText)
+    if (!text) return []
     const words = text.split(' ')
     const lines: string[] = []
     let cur = ''
@@ -123,6 +132,23 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
     }
     if (cur) lines.push(cur)
     return lines
+  }
+
+  /**
+   * Auto-scale font size down until the text wraps to ≤ maxLines.
+   * Never goes below minSize. Returns the final size used.
+   */
+  function autoScaleSize(
+    rawText: string, widthPt: number, startSize: number,
+    maxLines: number, minSize: number, font: typeof boldFont
+  ): number {
+    let size = startSize
+    while (size > minSize) {
+      const lines = wrapLines(rawText, widthPt, size, font)
+      if (lines.length <= maxLines) break
+      size = Math.max(minSize, size - 1)
+    }
+    return size
   }
 
   // ── 3. LAYOUT CONSTANTS ────────────────────────────────────────
@@ -143,7 +169,10 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   // ── 4. FRONT COVER ────────────────────────────────────────────
   const t     = typography.title
   const scale = Math.max(0.5, Math.min(1.6, input.titleFontScale ?? 1.0))
-  const titleSizePt = px2pt(t.fontSize) * scale
+
+  // Auto-scale: start from the requested size but shrink until title fits ≤ 3 lines
+  const titleSizeRequested = px2pt(t.fontSize) * scale
+  const titleSizePt = autoScaleSize(t.text, textWidthPt, titleSizeRequested, 3, 16, titleFont)
   const titleLines  = wrapLines(t.text, textWidthPt, titleSizePt, titleFont)
 
   // Dark overlay sized to actual title height
@@ -156,44 +185,49 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
     color: rgb(0, 0, 0), opacity: 0.5,
   })
 
-  // Title lines
+  // Title lines — centered on the full front cover width
   titleLines.forEach((line, i) => {
     const yPt = titleTopPt - titleSizePt - i * titleSizePt * t.lineHeight
-    drawCenteredText(line, frontStartPt + padPt, yPt, textWidthPt, titleSizePt, titleFont, [1, 1, 1])
+    drawCenteredText(line, frontStartPt, frontWidthPt, yPt, titleSizePt, titleFont, [1, 1, 1])
   })
 
   // Subtitle — below actual last title line, never overlapping
   if (typography.subtitle) {
     const s = typography.subtitle
-    const subSizePt = px2pt(s.fontSize) * scale
-    const subLines  = wrapLines(s.text, textWidthPt, subSizePt, obliqueFont)
-    const subTopPt  = titleBottomPt - 0.25 * PT
+    const subSizeRaw = px2pt(s.fontSize) * scale
+    const subSizePt  = autoScaleSize(s.text, textWidthPt, subSizeRaw, 2, 11, obliqueFont)
+    const subLines   = wrapLines(s.text, textWidthPt, subSizePt, obliqueFont)
+    const subTopPt   = titleBottomPt - 0.25 * PT
     subLines.forEach((line, i) => {
       const yPt = subTopPt - subSizePt - i * subSizePt * s.lineHeight
-      drawCenteredText(line, frontStartPt + padPt, yPt, textWidthPt, subSizePt, obliqueFont, [0.88, 0.88, 0.88])
+      drawCenteredText(line, frontStartPt, frontWidthPt, yPt, subSizePt, obliqueFont, [0.88, 0.88, 0.88])
     })
   }
 
-  // Gold line above author
+  // Gold line above author — spans 60% of front cover, perfectly centered
   const a = typography.author
-  const authorSizePt = px2pt(a.fontSize)
-  const authorBaseY  = pdfY(a.y) - authorSizePt
-  const goldLineY    = authorBaseY + authorSizePt + 0.25 * PT
+  // Auto-scale author name: shrink until it fits in 1 line
+  const authorSizeRaw = px2pt(a.fontSize)
+  const authorSizePt  = autoScaleSize(a.text, textWidthPt, authorSizeRaw, 1, 11, boldFont)
+  const authorBaseY   = pdfY(a.y) - authorSizePt
+  const goldLineY     = authorBaseY + authorSizePt + 0.25 * PT
+  const goldLineHalfW = frontWidthPt * 0.3
+  const goldLineCX    = frontStartPt + frontWidthPt / 2
   page.drawLine({
-    start: { x: frontStartPt + padPt + textWidthPt * 0.2, y: goldLineY },
-    end:   { x: frontStartPt + padPt + textWidthPt * 0.8, y: goldLineY },
+    start: { x: goldLineCX - goldLineHalfW, y: goldLineY },
+    end:   { x: goldLineCX + goldLineHalfW, y: goldLineY },
     thickness: 1.5, color: rgb(0.85, 0.72, 0.35),
   })
 
-  // Dark overlay behind author
+  // Dark overlay behind author — full cover width
   page.drawRectangle({
     x: frontStartPt, y: bleedPt,
     width: frontWidthPt, height: authorSizePt + 0.6 * PT,
     color: rgb(0, 0, 0), opacity: 0.58,
   })
 
-  // Author name — bold white all-caps
-  drawCenteredText(a.text, frontStartPt + padPt, authorBaseY, textWidthPt, authorSizePt, boldFont, [1, 1, 1])
+  // Author name — bold white, centered on full front cover
+  drawCenteredText(a.text, frontStartPt, frontWidthPt, authorBaseY, authorSizePt, boldFont, [1, 1, 1])
 
   // ── 5. SPINE ──────────────────────────────────────────────────
   if (dims.spineWidth >= 0.2) {
