@@ -1,9 +1,19 @@
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib'
 import type { ExportInput, ExportResult, ExportValidation } from './types'
 
-// Strip newline/tab chars — WinAnsi cannot encode \n (0x000a)
+// Strip/replace chars WinAnsi (pdf-lib standard fonts) cannot encode
 function cleanText(text: string): string {
-  return text.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+  return text
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/—/g, ' - ')   // em dash
+    .replace(/–/g, ' - ')   // en dash
+    .replace(/‘|’/g, "'")   // smart single quotes
+    .replace(/“|”/g, '"')   // smart double quotes
+    .replace(/…/g, '...')   // ellipsis
+    .replace(/ /g, ' ')     // non-breaking space
+    .replace(/[^\x20-\xFF]/g, '') // strip anything outside WinAnsi range
+    .replace(/\s{2,}/g, ' ')
+    .trim()
 }
 
 // Count words to dynamically size text
@@ -241,46 +251,66 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
 
   let curY = pageHeightPt - bleedPt - safePt - 0.4 * PT
 
-  // ── ABOUT THE BOOK (styled box with gold border) ──────────────
+  // ── ABOUT THE BOOK — plain text, no box ──────────────────────
   if (input.description) {
-    const label = 'ABOUT THE BOOK'
     const labelSizePt = Math.min(descSizePt * 1.0, 11)
-    const boxPad = 0.15 * PT
-    const bodyLines = wrapLines(input.description, backTextWidthPt - boxPad * 2, descSizePt, regularFont).slice(0, 14)
-    const boxH = labelSizePt + 0.12 * PT + boxPad + bodyLines.length * lineHeightDesc + boxPad + 0.1 * PT
+    const bodyLines = wrapLines(input.description, backTextWidthPt, descSizePt, regularFont).slice(0, 14)
 
-    page.drawRectangle({
-      x: backContentX, y: curY - boxH,
-      width: backTextWidthPt, height: boxH,
-      color: rgb(0, 0, 0), opacity: 0.30,
-      borderColor: rgb(0.85, 0.72, 0.35), borderWidth: 1.0,
-    })
-
-    page.drawText(label, {
-      x: backContentX + boxPad,
-      y: curY - labelSizePt - boxPad * 0.5,
+    // Gold label only — no box border
+    page.drawText('ABOUT THE BOOK', {
+      x: backContentX,
+      y: curY - labelSizePt,
       size: labelSizePt, font: boldFont,
       color: rgb(0.85, 0.72, 0.35),
     })
 
-    const underlineY = curY - labelSizePt - boxPad * 0.5 - 0.1 * PT
+    const underlineY = curY - labelSizePt - 0.1 * PT
     page.drawLine({
-      start: { x: backContentX + boxPad, y: underlineY },
-      end:   { x: backContentX + backTextWidthPt - boxPad, y: underlineY },
+      start: { x: backContentX, y: underlineY },
+      end:   { x: backContentX + backTextWidthPt * 0.4, y: underlineY },
       thickness: 0.7, color: rgb(0.85, 0.72, 0.35),
     })
 
-    let textY = underlineY - 0.15 * PT
+    let textY = underlineY - 0.18 * PT
     bodyLines.forEach(line => {
       page.drawText(line, {
-        x: backContentX + boxPad, y: textY - descSizePt,
+        x: backContentX, y: textY - descSizePt,
         size: descSizePt, font: regularFont,
         color: rgb(0.95, 0.95, 0.95),
       })
       textY -= lineHeightDesc
     })
 
-    curY -= boxH + 0.35 * PT
+    curY = textY - 0.3 * PT
+  }
+
+  // ── REVIEW QUOTE ──────────────────────────────────────────────
+  if (input.reviewQuote) {
+    const quoteSizePt = 9.5
+    const quoteLineH  = quoteSizePt * 1.6
+    const quoteText   = cleanText(`"${input.reviewQuote}"`)
+    const quoteLines  = wrapLines(quoteText, backTextWidthPt, quoteSizePt, obliqueFont).slice(0, 3)
+
+    curY -= 0.2 * PT
+    quoteLines.forEach(line => {
+      page.drawText(line, {
+        x: backContentX, y: curY - quoteSizePt,
+        size: quoteSizePt, font: obliqueFont,
+        color: rgb(0.85, 0.72, 0.35),
+      })
+      curY -= quoteLineH
+    })
+
+    if (input.reviewAttribution) {
+      const attrText = cleanText(input.reviewAttribution)
+      page.drawText(attrText, {
+        x: backContentX, y: curY - 8,
+        size: 8, font: regularFont,
+        color: rgb(0.65, 0.65, 0.65),
+      })
+      curY -= 8 * 1.5
+    }
+    curY -= 0.2 * PT
   }
 
   // ── ABOUT THE AUTHOR — plain text, no box ─────────────────────

@@ -164,6 +164,8 @@ export default function GeneratePage() {
           isbn: isbn || undefined,
           barcodeImageBase64: barcodeImage || undefined,
           spineWidthOverride: spineOverride,
+          reviewQuote: form.reviewQuote || undefined,
+          reviewAttribution: form.reviewAttribution || undefined,
         }),
       })
       if (!res.ok) {

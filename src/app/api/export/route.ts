@@ -13,10 +13,12 @@ import type { KDPInput } from '@/lib/kdp-engine/types'
 const schema = z.object({
   coverId: z.string(),
   titleFontScale: z.number().min(0.5).max(1.6).optional(),
-  titleStyle: z.enum(['bold-sans', 'serif', 'serif-italic']).optional(),
+  titleStyle: z.enum(['bold-sans', 'serif', 'serif-italic', 'sans-oblique', 'courier-bold', 'serif-light']).optional(),
   isbn: z.string().max(30).optional(),
   barcodeImageBase64: z.string().optional(),
   spineWidthOverride: z.number().min(0.06).max(3).optional(),
+  reviewQuote: z.string().max(300).optional(),
+  reviewAttribution: z.string().max(100).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -71,6 +73,8 @@ export async function POST(req: NextRequest) {
       authorName: cover.authorName,
       description: cover.description ?? '',
       authorBio: cover.authorBio ?? undefined,
+      reviewQuote: parsed.data.reviewQuote ?? cover.reviewQuote ?? undefined,
+      reviewAttribution: parsed.data.reviewAttribution,
       titleFontScale: parsed.data.titleFontScale,
       titleStyle: parsed.data.titleStyle,
       isbn: parsed.data.isbn,
