@@ -57,6 +57,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-6 text-sm">
           <Link href="/pricing" className="text-gray-400 hover:text-white transition">Pricing</Link>
+          <Link href="/affiliate" className="text-gray-400 hover:text-white transition">Affiliates</Link>
           <Link href="/sign-in" className="text-gray-400 hover:text-white transition">Sign In</Link>
           <Link href="/sign-up" className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl transition">
             Start Free
@@ -235,6 +236,7 @@ export default function LandingPage() {
       <footer className="border-t border-gray-900 px-6 py-8 text-center text-sm text-gray-600">
         <div className="flex items-center justify-center gap-6 mb-4">
           <Link href="/pricing" className="hover:text-gray-400 transition">Pricing</Link>
+          <Link href="/affiliate" className="hover:text-gray-400 transition">Affiliates</Link>
           <Link href="/sign-in" className="hover:text-gray-400 transition">Sign In</Link>
           <Link href="/sign-up" className="hover:text-gray-400 transition">Sign Up</Link>
         </div>
