@@ -1,35 +1,53 @@
 import Link from 'next/link'
 
+// Commission matrix: [tier index][plan index] = percentage
 const TIERS = [
-  { level: 1, range: '1 – 19',  commission: '10%', rate: 0.10, color: 'gray',   badge: 'Starter' },
-  { level: 2, range: '20 – 39', commission: '20%', rate: 0.20, color: 'blue',   badge: 'Rising' },
-  { level: 3, range: '40 – 59', commission: '25%', rate: 0.25, color: 'violet', badge: 'Partner' },
-  { level: 4, range: '60+',     commission: '30%', rate: 0.30, color: 'amber',  badge: 'Elite' },
+  { label: 'Level 1', range: '1 – 19 active users',  rates: { starter: 0.08, pro: 0.10, agency: 0.08 } },
+  { label: 'Level 2', range: '20 – 39 active users', rates: { starter: 0.12, pro: 0.20, agency: 0.15 } },
+  { label: 'Level 3', range: '40 – 59 active users', rates: { starter: 0.15, pro: 0.25, agency: 0.20 } },
+  { label: 'Level 4', range: '60+ active users',     rates: { starter: 0.18, pro: 0.30, agency: 0.25 } },
 ]
 
 const PLANS = [
-  { name: 'Starter', price: 9 },
-  { name: 'Pro',     price: 29 },
-  { name: 'Agency',  price: 79 },
+  { key: 'starter', name: 'Starter', price: 9,  color: 'blue' },
+  { key: 'pro',     name: 'Pro',     price: 29, color: 'violet' },
+  { key: 'agency',  name: 'Agency',  price: 79, color: 'amber' },
+]
+
+const RULES = [
+  { rule: 'Cookie Duration',    detail: '60 days — if someone clicks your link and subscribes within 60 days, you earn the commission.' },
+  { rule: 'Qualified Referral', detail: 'Only paying subscribers count toward your tier. Free accounts do not count.' },
+  { rule: 'Tier Calculation',   detail: 'Your tier is calculated on the 1st of each month based on how many of your referrals are actively paying.' },
+  { rule: 'Holding Period',     detail: '30 days — commissions are held for 30 days to account for refunds and chargebacks.' },
+  { rule: 'Payout Date',        detail: 'The 15th of every month for the previous month\'s approved commissions.' },
+  { rule: 'Minimum Payout',     detail: '$20 minimum before a payout is issued. Unpaid balance rolls over to next month.' },
+  { rule: 'Payment Method',     detail: 'PayPal only. You must have a verified PayPal account to receive payment.' },
+  { rule: 'Chargeback Rule',    detail: 'If a referred user requests a refund, the commission for that payment is reversed.' },
+  { rule: 'Self-referral',      detail: 'You may not refer yourself or use fake accounts. Violations result in permanent ban.' },
 ]
 
 const HOW = [
-  { n: '01', title: 'Sign up free',       desc: 'Create your account and get your unique referral link instantly.' },
-  { n: '02', title: 'Share your link',    desc: 'Post in author communities, YouTube, TikTok, newsletters, Facebook groups — anywhere self-publishers are.' },
-  { n: '03', title: 'Grow your base',     desc: 'The more active paying referrals you maintain, the higher your commission tier.' },
-  { n: '04', title: 'Get paid monthly',   desc: 'Payouts via PayPal every month. Minimum $20 threshold.' },
+  { n: '01', title: 'Sign up free',         desc: 'Create your KDP Cover AI account and get your unique referral link instantly from your dashboard.' },
+  { n: '02', title: 'Share everywhere',     desc: 'Post in self-publishing communities, YouTube, TikTok, newsletters, Reddit — wherever authors hang out.' },
+  { n: '03', title: 'Grow your active base',desc: 'More active paying referrals = higher tier = higher commission on ALL your referrals.' },
+  { n: '04', title: 'Get paid the 15th',    desc: 'We calculate your earnings on the 1st, hold 30 days, and pay via PayPal on the 15th.' },
 ]
 
 export default function AffiliatePage() {
-  const tierColors: Record<string, { border: string; bg: string; text: string; badge: string }> = {
-    gray:   { border: 'border-gray-600/50',   bg: 'bg-gray-800/30',   text: 'text-gray-300',   badge: 'bg-gray-800 text-gray-400' },
-    blue:   { border: 'border-blue-600/50',   bg: 'bg-blue-950/20',   text: 'text-blue-400',   badge: 'bg-blue-900/50 text-blue-300' },
-    violet: { border: 'border-violet-600/50', bg: 'bg-violet-950/20', text: 'text-violet-400', badge: 'bg-violet-900/50 text-violet-300' },
-    amber:  { border: 'border-amber-500/50',  bg: 'bg-amber-950/20',  text: 'text-amber-400',  badge: 'bg-amber-900/50 text-amber-300' },
+  const planColors: Record<string, string> = {
+    blue:   'text-blue-400',
+    violet: 'text-violet-400',
+    amber:  'text-amber-400',
+  }
+  const planBg: Record<string, string> = {
+    blue:   'bg-blue-900/30 border-blue-700/50',
+    violet: 'bg-violet-900/30 border-violet-700/50',
+    amber:  'bg-amber-900/30 border-amber-700/50',
   }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+
       {/* Nav */}
       <nav className="border-b border-gray-900 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-2">
@@ -45,64 +63,115 @@ export default function AffiliatePage() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
+      <section className="max-w-4xl mx-auto px-6 pt-20 pb-14 text-center">
         <div className="inline-flex items-center gap-2 bg-amber-950/60 border border-amber-700/50 text-amber-300 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
-          💰 Earn up to 30% recurring commission
+          💰 Earn up to 30% recurring commission per referral
         </div>
         <h1 className="text-5xl md:text-6xl font-black leading-tight mb-6">
-          Refer. Grow. Earn.
+          Refer Authors.
           <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">
-            Up to 30% Commission
+            Earn Every Month.
           </span>
         </h1>
-        <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
-          Start earning 10% and unlock higher tiers as your referrals grow.
-          The more active paying users you maintain, the more you earn.
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">
+          Start at 10% and grow to 30% as your referrals scale.
+          Different rates for each plan — the bigger the plan, the bigger your payout.
         </p>
         <Link href="/sign-up"
           className="inline-flex bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 py-4 rounded-2xl text-lg transition shadow-lg shadow-amber-900/40">
-          Start Earning Free →
+          Get Your Referral Link Free →
         </Link>
-        <p className="text-sm text-gray-600 mt-4">Free to join · No minimum traffic · Get your link instantly</p>
+        <p className="text-sm text-gray-600 mt-4">Paid monthly via PayPal · Min $20 · 60-day cookie</p>
       </section>
 
-      {/* How tiers work — key rule */}
-      <section className="max-w-3xl mx-auto px-6 pb-10">
-        <div className="bg-amber-900/20 border border-amber-700/40 rounded-2xl p-5 text-center">
-          <p className="text-amber-300 font-semibold text-sm mb-1">⚡ How your tier is calculated</p>
-          <p className="text-gray-300 text-sm leading-relaxed">
-            Your commission rate is based on how many of your referrals are <strong className="text-white">actively paying</strong> right now.
-            If you refer 60 people but only 40 are paying this month — you earn the <strong className="text-white">40-user rate (25%)</strong> on those 40.
-            Once all 60 are paying — you unlock <strong className="text-white">30%</strong> on all 60.
+      {/* Key rule callout */}
+      <section className="max-w-3xl mx-auto px-6 pb-12">
+        <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5">
+          <p className="text-white font-semibold mb-2">⚡ How your tier works</p>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            Your tier is calculated on the <strong className="text-white">1st of every month</strong> based on
+            your total <strong className="text-white">active paying referrals</strong> across all plans.
+            If you have 60 referrals but only 40 are paying — you earn at the <strong className="text-white">Level 3 rate</strong> on those 40.
+            Once all 60 are paying, you unlock <strong className="text-white">Level 4</strong> on all 60.
+            Commission rates differ by plan — Starter, Pro, and Agency each have their own percentage.
           </p>
         </div>
       </section>
 
-      {/* Commission Tiers */}
+      {/* Full Commission Matrix */}
       <section className="max-w-5xl mx-auto px-6 py-10">
-        <h2 className="text-3xl font-bold text-white text-center mb-3">Commission Tiers</h2>
-        <p className="text-gray-400 text-center mb-10">Maintain more active paying referrals → unlock higher rates.</p>
-        <div className="grid md:grid-cols-4 gap-4">
-          {TIERS.map((t, i) => {
-            const c = tierColors[t.color]
+        <h2 className="text-3xl font-bold text-white text-center mb-3">Full Commission Table</h2>
+        <p className="text-gray-400 text-center text-sm mb-8">
+          Your tier is based on <em>total active paying referrals</em>. Each plan has its own commission rate.
+        </p>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-700 text-xs">
+                <th className="text-left px-5 py-4 text-gray-400 font-medium">Tier</th>
+                <th className="text-left px-5 py-4 text-gray-400 font-medium">Active Users</th>
+                {PLANS.map(p => (
+                  <th key={p.key} className={`text-center px-5 py-4 font-bold ${planColors[p.color]}`}>
+                    {p.name}<br/><span className="font-normal text-gray-500 text-xs">${p.price}/mo</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              {TIERS.map((tier, i) => (
+                <tr key={tier.label} className={i === 3 ? 'bg-amber-950/10' : ''}>
+                  <td className="px-5 py-4">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      i === 3 ? 'bg-amber-900/50 text-amber-300' :
+                      i === 2 ? 'bg-violet-900/50 text-violet-300' :
+                      i === 1 ? 'bg-blue-900/50 text-blue-300' :
+                      'bg-gray-800 text-gray-400'
+                    }`}>{tier.label}</span>
+                  </td>
+                  <td className="px-5 py-4 text-gray-300 text-xs">{tier.range}</td>
+                  {PLANS.map(p => {
+                    const rate = tier.rates[p.key as keyof typeof tier.rates]
+                    const earn = p.price * rate
+                    return (
+                      <td key={p.key} className="px-5 py-4 text-center">
+                        <div className={`font-bold ${planColors[p.color]}`}>{(rate * 100).toFixed(0)}%</div>
+                        <div className="text-gray-500 text-xs font-mono">${earn.toFixed(2)}/user/mo</div>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* What you earn at max tier */}
+      <section className="max-w-5xl mx-auto px-6 py-4">
+        <h2 className="text-xl font-bold text-white mb-4">At Level 4 (60+ users) — Your monthly earnings</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          {PLANS.map(p => {
+            const rate = TIERS[3].rates[p.key as keyof typeof TIERS[3]['rates']]
+            const earn = p.price * rate
+            const biz  = p.price * 0.95 - earn
             return (
-              <div key={t.level} className={`border rounded-2xl p-6 relative ${c.border} ${c.bg}`}>
-                {i === 3 && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full">
-                    MAX TIER
+              <div key={p.key} className={`border rounded-2xl p-5 ${planBg[p.color]}`}>
+                <p className={`text-sm font-bold mb-3 ${planColors[p.color]}`}>{p.name} Plan — ${p.price}/mo</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Per user you earn</span>
+                    <span className="text-white font-mono font-bold">${earn.toFixed(2)}/mo</span>
                   </div>
-                )}
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${c.badge}`}>{t.badge}</span>
-                <p className={`text-5xl font-black my-3 ${c.text}`}>{t.commission}</p>
-                <p className="text-sm text-gray-400 font-medium">{t.range} active users</p>
-                <div className="mt-4 border-t border-gray-700 pt-4 space-y-1">
-                  {PLANS.map(p => (
-                    <div key={p.name} className="flex justify-between text-xs">
-                      <span className="text-gray-500">{p.name} ${p.price}</span>
-                      <span className={`font-mono font-bold ${c.text}`}>${(p.price * t.rate).toFixed(2)}/mo</span>
-                    </div>
-                  ))}
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Platform keeps</span>
+                    <span className="text-green-400 font-mono font-bold">${biz.toFixed(2)}/mo</span>
+                  </div>
+                  <div className="border-t border-gray-700 pt-2 flex justify-between">
+                    <span className="text-gray-400">At 60 referrals</span>
+                    <span className={`font-mono font-bold ${planColors[p.color]}`}>${(earn * 60).toFixed(0)}/mo</span>
+                  </div>
                 </div>
               </div>
             )
@@ -110,70 +179,23 @@ export default function AffiliatePage() {
         </div>
       </section>
 
-      {/* Earnings Calculator Table */}
+      {/* Scale scenario */}
       <section className="max-w-5xl mx-auto px-6 py-10">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-800">
-            <h2 className="text-lg font-bold text-white">Earnings Calculator — What you earn vs what KDP Cover AI earns</h2>
-            <p className="text-xs text-gray-500 mt-1">Based on Pro plan ($29/mo) referrals. Figures are monthly recurring.</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800 text-gray-500 text-xs">
-                  <th className="text-left px-6 py-3">Active Users</th>
-                  <th className="text-left px-6 py-3">Your Tier</th>
-                  <th className="text-right px-6 py-3">Your Earnings</th>
-                  <th className="text-right px-6 py-3">Platform Profit</th>
-                  <th className="text-right px-6 py-3">Split</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {[
-                  { users: 10,  tier: '10%', rate: 0.10 },
-                  { users: 20,  tier: '20%', rate: 0.20 },
-                  { users: 40,  tier: '25%', rate: 0.25 },
-                  { users: 60,  tier: '30%', rate: 0.30 },
-                ].map(row => {
-                  const gross     = row.users * 29
-                  const fee       = gross * 0.05
-                  const affEarn   = gross * row.rate
-                  const bizProfit = gross - fee - affEarn
-                  const affPct    = Math.round(affEarn / (gross - fee) * 100)
-                  const bizPct    = 100 - affPct
-                  return (
-                    <tr key={row.users} className={row.users === 60 ? 'bg-amber-950/10' : ''}>
-                      <td className="px-6 py-4 text-white font-bold">{row.users} paying</td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full font-mono">{row.tier}</span>
-                      </td>
-                      <td className="px-6 py-4 text-right text-orange-400 font-mono font-bold">${affEarn.toFixed(0)}/mo</td>
-                      <td className="px-6 py-4 text-right text-green-400 font-mono font-bold">${bizProfit.toFixed(0)}/mo</td>
-                      <td className="px-6 py-4 text-right text-gray-400 text-xs">You {affPct}% · Platform {bizPct}%</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* 10 affiliates scenario */}
-          <div className="px-6 py-5 bg-amber-950/20 border-t border-amber-800/30">
-            <p className="text-amber-300 font-semibold text-sm mb-3">🚀 Scale scenario: 10 affiliates × 60 active users each = 600 paying users</p>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Total monthly revenue</p>
-                <p className="text-xl font-bold text-white">$17,400</p>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-white mb-1">🚀 Scale scenario: 10 affiliates × 60 users = 600 paying users</h2>
+          <p className="text-xs text-gray-500 mb-5">All on Pro plan, all at Level 4</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            {[
+              { label: 'Total Revenue',      value: '$17,400/mo', color: 'text-white' },
+              { label: 'All Affiliates Paid', value: '$5,220/mo', color: 'text-orange-400' },
+              { label: 'Platform Fees (5%)',  value: '$870/mo',   color: 'text-red-400' },
+              { label: 'Your Profit',         value: '$11,310/mo',color: 'text-green-400' },
+            ].map(s => (
+              <div key={s.label} className="bg-gray-800 rounded-xl p-4">
+                <p className="text-xs text-gray-500 mb-1">{s.label}</p>
+                <p className={`text-lg font-bold font-mono ${s.color}`}>{s.value}</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">All affiliates paid</p>
-                <p className="text-xl font-bold text-orange-400">$5,220</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Your profit</p>
-                <p className="text-xl font-bold text-green-400">$11,310</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -192,19 +214,15 @@ export default function AffiliatePage() {
         </div>
       </section>
 
-      {/* Perfect for */}
+      {/* Rules & Regulations */}
       <section className="max-w-4xl mx-auto px-6 py-10">
-        <h2 className="text-3xl font-bold text-white text-center mb-10">Perfect For</h2>
-        <div className="grid md:grid-cols-3 gap-5">
-          {[
-            { icon: '📺', title: 'YouTubers & TikTokers', desc: 'Self-publishing, KDP, passive income content — your audience buys this instantly.' },
-            { icon: '✍️', title: 'Book Bloggers', desc: 'Your readers are authors. A cover tool solves their #1 problem.' },
-            { icon: '📧', title: 'Newsletter Writers', desc: 'One mention to your list = months of passive recurring income.' },
-          ].map(c => (
-            <div key={c.title} className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-              <div className="text-3xl mb-3">{c.icon}</div>
-              <h3 className="text-white font-semibold mb-2">{c.title}</h3>
-              <p className="text-gray-500 text-sm">{c.desc}</p>
+        <h2 className="text-3xl font-bold text-white text-center mb-3">Rules & Regulations</h2>
+        <p className="text-gray-400 text-center text-sm mb-8">Read before joining. Violations result in commission forfeiture.</p>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl divide-y divide-gray-800">
+          {RULES.map(r => (
+            <div key={r.rule} className="px-6 py-4 flex gap-4">
+              <span className="text-violet-400 font-bold text-sm min-w-[160px] shrink-0">{r.rule}</span>
+              <span className="text-gray-400 text-sm leading-relaxed">{r.detail}</span>
             </div>
           ))}
         </div>
@@ -213,10 +231,10 @@ export default function AffiliatePage() {
       {/* CTA */}
       <section className="max-w-2xl mx-auto px-6 py-20 text-center">
         <h2 className="text-4xl font-black text-white mb-4">Start at 10%. Scale to 30%.</h2>
-        <p className="text-gray-400 mb-8">The more authors you help, the more you earn. No cap.</p>
+        <p className="text-gray-400 mb-8">No cap. No gimmicks. Real recurring monthly income.</p>
         <Link href="/sign-up"
           className="inline-flex bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 py-4 rounded-2xl text-xl transition">
-          Join Affiliate Program Free →
+          Join Free — Get Your Link →
         </Link>
       </section>
 
@@ -227,7 +245,7 @@ export default function AffiliatePage() {
           <Link href="/pricing" className="hover:text-gray-400">Pricing</Link>
           <Link href="/sign-up" className="hover:text-gray-400">Sign Up</Link>
         </div>
-        <p>© {new Date().getFullYear()} KDP Cover AI. Affiliate commissions paid monthly via PayPal.</p>
+        <p>© {new Date().getFullYear()} KDP Cover AI. Commissions paid monthly via PayPal on the 15th.</p>
       </footer>
     </div>
   )
