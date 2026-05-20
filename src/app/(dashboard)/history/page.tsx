@@ -68,8 +68,14 @@ export default async function HistoryPage() {
                   <p className="text-xs text-gray-500 capitalize mt-0.5">{cover.genre} · {cover.trimSize}"</p>
                   <p className="text-xs text-gray-600 mt-0.5">{cover.pageCount} pages</p>
                   <p className="text-xs text-gray-700 mt-2">{new Date(cover.createdAt).toLocaleDateString()}</p>
+                  {/* Regenerate with same settings */}
+                  <Link
+                    href={`/generate?from=${cover.id}`}
+                    className="mt-2 w-full flex items-center justify-center gap-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white py-1.5 rounded-lg transition">
+                    🔄 Regenerate
+                  </Link>
                   {cover.exports.length > 0 && (
-                    <div className="mt-2 flex flex-col gap-1">
+                    <div className="mt-1.5 flex flex-col gap-1">
                       {cover.exports.map((ex: { format: string; url: string; downloadCount: number }, i: number) => (
                         <HistoryDownload key={i} url={ex.url} format={ex.format} title={cover.title} />
                       ))}

@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
 
 // Commission matrix: [tier index][plan index] = percentage
 const TIERS = [
@@ -47,20 +49,7 @@ export default function AffiliatePage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-
-      {/* Nav */}
-      <nav className="border-b border-gray-900 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center font-bold text-sm">K</div>
-          <span className="font-bold text-lg">KDP Cover AI</span>
-        </Link>
-        <div className="flex items-center gap-4 text-sm">
-          <Link href="/pricing" className="text-gray-400 hover:text-white">Pricing</Link>
-          <Link href="/sign-up" className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl transition">
-            Join Affiliate Program
-          </Link>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-6 pt-20 pb-14 text-center">
@@ -238,15 +227,7 @@ export default function AffiliatePage() {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-900 px-6 py-8 text-center text-sm text-gray-600">
-        <div className="flex items-center justify-center gap-6 mb-4">
-          <Link href="/" className="hover:text-gray-400">Home</Link>
-          <Link href="/pricing" className="hover:text-gray-400">Pricing</Link>
-          <Link href="/sign-up" className="hover:text-gray-400">Sign Up</Link>
-        </div>
-        <p>© {new Date().getFullYear()} KDP Cover AI. Commissions paid monthly via PayPal on the 15th.</p>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

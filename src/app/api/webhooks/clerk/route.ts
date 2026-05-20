@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Webhook } from 'svix'
 import { prisma } from '@/lib/db/prisma'
 
+/** Generate a unique referral code like KDP-X7K2M9 */
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'KDP-'
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return code
+}
+
+async function uniqueReferralCode(): Promise<string> {
+  let code = generateReferralCode()
+  let attempts = 0
+  while (attempts < 10) {
+    const existing = await prisma.user.findFirst({ where: { referralCode: code } })
+    if (!existing) return code
+    code = generateReferralCode()
+    attempts++
+  }
+  // fallback: append timestamp
+  return `KDP-${Date.now().toString(36).toUpperCase().slice(-6)}`
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const svixId = req.headers.get('svix-id')
@@ -30,6 +53,7 @@ export async function POST(req: NextRequest) {
   if (type === 'user.created') {
     const email = data.email_addresses?.[0]?.email_address ?? ''
     const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
+    const referralCode = await uniqueReferralCode()
 
     const existing = await prisma.user.findFirst({ where: { clerkId: data.id } })
     if (existing) {
@@ -46,6 +70,7 @@ export async function POST(req: NextRequest) {
           imageUrl: data.image_url,
           plan: 'FREE',
           generationsLimit: 3,
+          referralCode,      // unique referral code for every new user
         },
       })
     }

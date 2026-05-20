@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
 
 const FEATURES = [
   {
@@ -49,21 +51,7 @@ const TESTIMONIALS = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Nav */}
-      <nav className="border-b border-gray-900 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center font-bold text-sm">K</div>
-          <span className="font-bold text-lg">KDP Cover AI</span>
-        </div>
-        <div className="flex items-center gap-6 text-sm">
-          <Link href="/pricing" className="text-gray-400 hover:text-white transition">Pricing</Link>
-          <Link href="/affiliate" className="text-gray-400 hover:text-white transition">Affiliates</Link>
-          <Link href="/sign-in" className="text-gray-400 hover:text-white transition">Sign In</Link>
-          <Link href="/sign-up" className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl transition">
-            Start Free
-          </Link>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
@@ -232,17 +220,7 @@ export default function LandingPage() {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-900 px-6 py-8 text-center text-sm text-gray-600">
-        <div className="flex items-center justify-center gap-6 mb-4">
-          <Link href="/pricing" className="hover:text-gray-400 transition">Pricing</Link>
-          <Link href="/affiliate" className="hover:text-gray-400 transition">Affiliates</Link>
-          <Link href="/sign-in" className="hover:text-gray-400 transition">Sign In</Link>
-          <Link href="/sign-up" className="hover:text-gray-400 transition">Sign Up</Link>
-        </div>
-        <p>© {new Date().getFullYear()} KDP Cover AI. All rights reserved.</p>
-        <p className="mt-1 text-xs text-gray-700">AI-generated covers. Commercial rights granted on paid plans. Not affiliated with Amazon KDP.</p>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

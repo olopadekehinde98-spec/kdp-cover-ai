@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const GENRES = [
   { value: 'thriller', label: 'Thriller', emoji: '🔪' },
@@ -60,6 +60,8 @@ function inp(cls = '') {
 
 export default function GeneratePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const fromCoverId = searchParams.get('from')
   const [method, setMethod] = useState<Method | null>(null)
   // Method 3 sub-step: 'specs' | 'design-choice' | 'design'
   const [kdpSubStep, setKdpSubStep] = useState<'specs' | 'design-choice' | 'design'>('specs')
@@ -81,6 +83,37 @@ export default function GeneratePage() {
   const [barcodeImage, setBarcodeImage] = useState<string | null>(null)
   const [barcodeFileName, setBarcodeFileName] = useState('')
   const barcodeInputRef = useRef<HTMLInputElement>(null)
+
+  // Pre-fill from an existing cover when ?from=coverId
+  useEffect(() => {
+    if (!fromCoverId) return
+    fetch(`/api/covers/${fromCoverId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.cover) {
+          const c = data.cover
+          setForm(prev => ({
+            ...prev,
+            trimSize:    c.trimSize    ?? prev.trimSize,
+            pageCount:   c.pageCount   ?? prev.pageCount,
+            paperType:   c.paperType   ?? prev.paperType,
+            coverType:   c.coverType   ?? prev.coverType,
+            title:       c.title       ?? prev.title,
+            subtitle:    c.subtitle    ?? prev.subtitle,
+            authorName:  c.authorName  ?? prev.authorName,
+            genre:       c.genre       ?? prev.genre,
+            prompt:      c.prompt      ?? prev.prompt,
+            description: c.description ?? prev.description,
+            authorBio:   c.authorBio   ?? prev.authorBio,
+            reviewQuote: c.reviewQuote ?? prev.reviewQuote,
+          }))
+          // Start at step 1, method AI so user sees it pre-filled
+          setMethod('ai')
+          setStep(1)
+        }
+      })
+      .catch(() => {})
+  }, [fromCoverId])
 
   function update(field: keyof FormData, value: string | number) {
     setForm(prev => ({ ...prev, [field]: value }))

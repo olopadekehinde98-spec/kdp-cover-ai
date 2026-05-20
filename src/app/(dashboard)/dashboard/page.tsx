@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import Link from 'next/link'
 import CoverGrid from '@/components/CoverGrid'
+import ReferralCard from '@/components/ReferralCard'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -25,6 +26,14 @@ export default async function DashboardPage() {
       },
     },
   })
+
+  // Referral data
+  const referralCount = user?.referralCode
+    ? await prisma.user.count({ where: { referredByCode: user.referralCode } })
+    : 0
+  const activeReferrals = user?.referralCode
+    ? await prisma.user.count({ where: { referredByCode: user.referralCode, subscriptionStatus: 'active' } })
+    : 0
 
   if (!user) redirect('/sign-in')
 
@@ -108,11 +117,22 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <QuickAction href="/pricing" icon="⬆" title="Upgrade Plan" desc="Get unlimited covers & PDF export" />
           <QuickAction href="/generate" icon="✨" title="New Cover" desc="Generate a new book cover" />
           <QuickAction href="/history" icon="📚" title="All Covers" desc="View and manage your covers" />
         </div>
+
+        {/* Referral Card */}
+        <ReferralCard data={{
+          referralCode: user.referralCode ?? null,
+          referralLink: user.referralCode
+            ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/sign-up?ref=${user.referralCode}`
+            : null,
+          referredByCode: user.referredByCode ?? null,
+          discountApplied: user.referralDiscountPct ?? 0,
+          stats: { referralCount, activeReferrals },
+        }} />
       </div>
     </div>
   )
