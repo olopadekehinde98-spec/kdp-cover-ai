@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db/prisma'
-import { cancelSubscription } from '@/lib/flutterwave/client'
+import { getPortalUrl } from '@/lib/paddle/client'
 
-/**
- * POST — cancel Flutterwave subscription.
- * Flutterwave doesn't have a hosted billing portal.
- * We cancel via API and update the DB immediately.
- */
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -15,28 +10,16 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  if (!user.flwSubscriptionId) {
-    return NextResponse.json({ error: 'No active subscription found' }, { status: 404 })
+  if (!user.paddleCustomerId) {
+    return NextResponse.json({ error: 'No billing account found' }, { status: 404 })
   }
 
   try {
-    await cancelSubscription(user.flwSubscriptionId)
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        plan:               'FREE',
-        subscriptionStatus: 'cancelled',
-        generationsLimit:   3,
-        flwSubscriptionId:  null,
-        flwPlanId:          null,
-      },
-    })
-
-    return NextResponse.json({ success: true })
+    const url = await getPortalUrl(user.paddleCustomerId)
+    return NextResponse.json({ url })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('Cancel error:', msg)
+    console.error('Portal error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

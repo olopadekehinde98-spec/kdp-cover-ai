@@ -29,10 +29,15 @@ model User {
   paystackEmailToken   String?
   paystackPlanCode     String?
 
-  // Flutterwave
+  // Flutterwave (kept so existing rows don't break)
   flwCustomerId        String?
   flwSubscriptionId    String?  @unique
   flwPlanId            String?
+
+  // Paddle
+  paddleCustomerId     String?  @unique
+  paddleSubId          String?  @unique
+  paddlePriceId        String?
 
   // Referral system
   referralCode         String?  @unique  // user's own code to share
