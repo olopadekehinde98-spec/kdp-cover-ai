@@ -9,6 +9,7 @@ export interface ExportInput {
   description: string
   authorBio?: string
   reviewQuote?: string
+  reviewAttribution?: string
   titleFontScale?: number   // 0.6 – 1.4, default 1.0
   titleStyle?: 'bold-sans' | 'serif' | 'serif-italic' | 'sans-oblique' | 'courier-bold' | 'serif-light'
   isbn?: string             // e.g. "978-0-00-000000-0"

@@ -8,22 +8,22 @@ const PLANS = [
   {
     key: 'STARTER',
     name: 'Starter',
-    price: 19,
+    price: 9,
     desc: 'Perfect for new authors',
     features: [
       '15 covers per month',
       'All trim sizes supported',
-      'PDF export',
-      'Watermark preview',
+      'KDP-ready PDF export',
       'Email support',
     ],
-    cta: 'Start Starter',
+    cta: 'Get Starter',
     highlight: false,
+    color: 'blue',
   },
   {
     key: 'PRO',
     name: 'Pro',
-    price: 49,
+    price: 29,
     desc: 'Most popular for serious authors',
     features: [
       'Unlimited cover generation',
@@ -31,17 +31,18 @@ const PLANS = [
       'KDP-ready PDF export',
       'Commercial use rights',
       'Series branding tools',
-      'AI description generator',
+      'AI back cover description',
       'Priority support',
     ],
-    cta: 'Start Pro',
+    cta: 'Get Pro',
     highlight: true,
+    color: 'violet',
   },
   {
     key: 'AGENCY',
     name: 'Agency',
-    price: 99,
-    desc: 'For publishers & formatters',
+    price: 79,
+    desc: 'For publishers & book formatters',
     features: [
       'Everything in Pro',
       'Team accounts (up to 5)',
@@ -50,8 +51,9 @@ const PLANS = [
       'White-label export',
       'Dedicated support channel',
     ],
-    cta: 'Start Agency',
+    cta: 'Get Agency',
     highlight: false,
+    color: 'amber',
   },
 ]
 
@@ -72,9 +74,10 @@ export default function PricingPage() {
         window.location.href = data.url
       } else if (res.status === 401) {
         router.push('/sign-up')
+      } else {
+        alert('Something went wrong. Please try again.')
       }
     } catch {
-      // silently fail — redirect to sign-up if not authed
       router.push('/sign-up')
     } finally {
       setLoading(null)
@@ -83,34 +86,41 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+      {/* Nav */}
+      <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">K</div>
           <span className="font-semibold text-white">KDP Cover AI</span>
         </Link>
-        <div className="flex gap-4 text-sm">
-          <Link href="/sign-in" className="text-gray-400 hover:text-white">Sign In</Link>
-          <Link href="/sign-up" className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg transition">Get Started</Link>
+        <div className="flex gap-4 text-sm items-center">
+          <Link href="/affiliate" className="text-gray-400 hover:text-white transition">Affiliates</Link>
+          <Link href="/sign-in" className="text-gray-400 hover:text-white transition">Sign In</Link>
+          <Link href="/sign-up" className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl transition">
+            Start Free
+          </Link>
         </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-20">
+        {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Simple, Transparent Pricing
           </h1>
           <p className="text-gray-400 text-xl max-w-2xl mx-auto">
-            Start free. Upgrade when you need more. Cancel anytime.
+            Start free with 3 covers. Upgrade when you&apos;re ready. Cancel anytime.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
+        {/* Plans */}
+        <div className="grid md:grid-cols-3 gap-6 mb-10">
           {PLANS.map(plan => (
             <div key={plan.key}
               className={`relative rounded-2xl border p-6 flex flex-col
                 ${plan.highlight
                   ? 'border-violet-500 bg-violet-950/30 shadow-xl shadow-violet-900/20'
                   : 'border-gray-800 bg-gray-900'}`}>
+
               {plan.highlight && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-semibold px-4 py-1 rounded-full">
                   Most Popular
@@ -118,7 +128,11 @@ export default function PricingPage() {
               )}
 
               <div className="mb-5">
-                <h2 className="text-lg font-bold text-white">{plan.name}</h2>
+                <h2 className={`text-lg font-bold
+                  ${plan.color === 'blue' ? 'text-blue-400' :
+                    plan.color === 'violet' ? 'text-violet-300' : 'text-amber-400'}`}>
+                  {plan.name}
+                </h2>
                 <p className="text-gray-500 text-sm mt-1">{plan.desc}</p>
               </div>
 
@@ -136,7 +150,9 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <button onClick={() => handleSubscribe(plan.key)} disabled={loading === plan.key}
+              <button
+                onClick={() => handleSubscribe(plan.key)}
+                disabled={loading === plan.key}
                 className={`w-full py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2
                   ${plan.highlight
                     ? 'bg-violet-600 hover:bg-violet-700 text-white'
@@ -149,11 +165,13 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Free plan */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 mb-12">
+        {/* Free tier callout */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 mb-16">
           <div>
-            <h3 className="text-white font-semibold text-lg">Start Free</h3>
-            <p className="text-gray-400 text-sm mt-1">3 free covers to test the platform. No credit card required.</p>
+            <h3 className="text-white font-semibold text-lg">Try It Free First</h3>
+            <p className="text-gray-400 text-sm mt-1">
+              3 free covers, no credit card needed. Watermark on free exports.
+            </p>
           </div>
           <Link href="/sign-up"
             className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-6 py-3 rounded-xl transition whitespace-nowrap">
@@ -161,17 +179,73 @@ export default function PricingPage() {
           </Link>
         </div>
 
+        {/* Comparison: Free vs Paid */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-16">
+          <div className="px-6 py-4 border-b border-gray-800">
+            <h2 className="text-white font-semibold">Plan Comparison</h2>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-800 text-xs text-gray-500">
+                <th className="text-left px-6 py-3">Feature</th>
+                <th className="text-center px-4 py-3">Free</th>
+                <th className="text-center px-4 py-3 text-blue-400">Starter</th>
+                <th className="text-center px-4 py-3 text-violet-400">Pro</th>
+                <th className="text-center px-4 py-3 text-amber-400">Agency</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              {[
+                ['Covers per month', '3 total', '15', 'Unlimited', 'Unlimited'],
+                ['PDF export', 'Watermark', '✓', '✓', '✓'],
+                ['All trim sizes', '✓', '✓', '✓', '✓'],
+                ['KDP-ready (no watermark)', '✗', '✓', '✓', '✓'],
+                ['Commercial use rights', '✗', '✗', '✓', '✓'],
+                ['AI back cover description', '✗', '✗', '✓', '✓'],
+                ['Team accounts', '✗', '✗', '✗', 'Up to 5'],
+                ['Priority rendering', '✗', '✗', '✗', '✓'],
+              ].map(([feature, free, starter, pro, agency]) => (
+                <tr key={feature}>
+                  <td className="px-6 py-3 text-gray-300">{feature}</td>
+                  <td className="px-4 py-3 text-center text-gray-500">{free}</td>
+                  <td className="px-4 py-3 text-center text-gray-300">{starter}</td>
+                  <td className="px-4 py-3 text-center text-gray-300">{pro}</td>
+                  <td className="px-4 py-3 text-center text-gray-300">{agency}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         {/* FAQ */}
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
           <div className="space-y-5">
             {[
-              { q: 'Will my covers pass Amazon KDP validation?', a: 'Yes. Our KDP Template Engine uses Amazon\'s exact published formulas to calculate spine width, bleed, safe zones, and total dimensions. Every export is validated before download.' },
-              { q: 'Who owns the generated covers?', a: 'You do. Once you export a cover on a paid plan, you hold full commercial usage rights to that specific output.' },
-              { q: 'What AI model do you use?', a: 'We use state-of-the-art image generation APIs (Ideogram, DALL-E 3) selected for their publishing-quality output. You benefit from the best available model at all times.' },
-              { q: 'Can I cancel anytime?', a: 'Yes, cancel with one click from your account settings. No penalties, no long-term contracts.' },
-              { q: 'What trim sizes are supported?', a: 'All major KDP trim sizes: 5×8, 5.5×8.5, 6×9, 6.14×9.21, 7×10, 8×10, 8.5×11, and more. Paperback and hardcover.' },
-              { q: 'What format does the export come in?', a: 'KDP-ready PDF at 300 DPI with exact dimensions, 0.125" bleed on all sides, embedded fonts, and trim marks.' },
+              {
+                q: 'Will my covers pass Amazon KDP validation?',
+                a: "Yes. Our KDP Template Engine uses Amazon's exact published formulas to calculate spine width, bleed, safe zones, and total dimensions. Every export is validated before download.",
+              },
+              {
+                q: 'Who owns the generated covers?',
+                a: 'You do. On paid plans you hold full commercial usage rights to every cover you export.',
+              },
+              {
+                q: 'What payment methods are accepted?',
+                a: 'All major credit cards, PayPal, and many local payment methods via Lemon Squeezy. Secure checkout, no card data touches our servers.',
+              },
+              {
+                q: 'Can I cancel anytime?',
+                a: 'Yes. Cancel with one click from your billing portal. Your plan stays active until the end of the billing period.',
+              },
+              {
+                q: 'Do you have an affiliate program?',
+                a: 'Yes! Earn up to 30% recurring commission for every author you refer. See the Affiliates page for details.',
+              },
+              {
+                q: 'What format does the export come in?',
+                a: 'KDP-ready PDF at 300 DPI with exact dimensions, 0.125" bleed on all sides, embedded fonts, and trim marks.',
+              },
             ].map(faq => (
               <div key={faq.q} className="border border-gray-800 rounded-xl p-5">
                 <p className="text-white font-semibold text-sm mb-2">{faq.q}</p>
@@ -181,6 +255,17 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-900 px-6 py-8 text-center text-sm text-gray-600">
+        <div className="flex items-center justify-center gap-6 mb-4">
+          <Link href="/" className="hover:text-gray-400 transition">Home</Link>
+          <Link href="/affiliate" className="hover:text-gray-400 transition">Affiliates</Link>
+          <Link href="/sign-in" className="hover:text-gray-400 transition">Sign In</Link>
+          <Link href="/sign-up" className="hover:text-gray-400 transition">Sign Up</Link>
+        </div>
+        <p>© {new Date().getFullYear()} KDP Cover AI. Payments processed securely by Lemon Squeezy.</p>
+      </footer>
     </div>
   )
 }

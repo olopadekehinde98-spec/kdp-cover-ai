@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
-import { createCheckoutSession, PLANS } from '@/lib/stripe/client'
+import { createCheckoutUrl } from '@/lib/lemonsqueezy/client'
 
-const schema = z.object({ plan: z.enum(['STARTER', 'PRO', 'AGENCY']) })
+const schema = z.object({
+  plan: z.enum(['STARTER', 'PRO', 'AGENCY']),
+})
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -17,6 +19,15 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  const session = await createCheckoutSession(userId, user.email, parsed.data.plan, user.stripeCustomerId ?? undefined)
-  return NextResponse.json({ url: session.url })
+  try {
+    const url = await createCheckoutUrl(
+      parsed.data.plan,
+      user.email,
+      userId,
+    )
+    return NextResponse.json({ url })
+  } catch (err) {
+    console.error('Checkout error:', err)
+    return NextResponse.json({ error: 'Failed to create checkout' }, { status: 500 })
+  }
 }

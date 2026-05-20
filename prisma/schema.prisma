@@ -13,9 +13,15 @@ model User {
   name          String?
   imageUrl      String?
   plan          Plan     @default(FREE)
+  // Legacy Stripe fields (kept so existing rows don't break)
   stripeCustomerId     String?  @unique
   stripeSubscriptionId String?  @unique
   stripePriceId        String?
+
+  // Lemon Squeezy
+  lsCustomerId         String?  @unique
+  lsSubscriptionId     String?  @unique
+  lsVariantId          String?
   subscriptionStatus   String?  @default("inactive")
   generationsUsed      Int      @default(0)
   generationsLimit     Int      @default(3)

@@ -25,9 +25,9 @@ export default async function AdminFinancialsPage() {
   const planPrices = { FREE: 0, STARTER: 9, PRO: 29, AGENCY: 79 }
 
   const grossRevenue =
-    planCounts.STARTER * 9 +
-    planCounts.PRO     * 29 +
-    planCounts.AGENCY  * 79
+    planCounts.STARTER * planPrices.STARTER +
+    planCounts.PRO     * planPrices.PRO +
+    planCounts.AGENCY  * planPrices.AGENCY
 
   const lemonFee        = grossRevenue * 0.05
   const openAICost      = covers * 0.001
@@ -109,19 +109,19 @@ export default async function AdminFinancialsPage() {
                 <th className="text-left px-6 py-3">Plan</th>
                 <th className="text-right px-6 py-3">Price</th>
                 <th className="text-right px-6 py-3">Lemon Fee</th>
-                <th className="text-right px-6 py-3">Affiliate (30%)</th>
+                <th className="text-right px-6 py-3">Affiliate (max rate)</th>
                 <th className="text-right px-6 py-3">Profit (no aff.)</th>
                 <th className="text-right px-6 py-3">Profit (with aff.)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
               {[
-                { plan: 'Starter', price: 9 },
-                { plan: 'Pro',     price: 29 },
-                { plan: 'Agency',  price: 79 },
-              ].map(({ plan, price }) => {
+                { plan: 'Starter', price: 9,  maxAff: 0.18 },
+                { plan: 'Pro',     price: 29, maxAff: 0.30 },
+                { plan: 'Agency',  price: 79, maxAff: 0.25 },
+              ].map(({ plan, price, maxAff }) => {
                 const fee = price * 0.05
-                const aff = price * 0.30
+                const aff = price * maxAff
                 const noAff = price - fee
                 const withAff = price - fee - aff
                 return (
