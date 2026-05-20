@@ -18,10 +18,16 @@ model User {
   stripeSubscriptionId String?  @unique
   stripePriceId        String?
 
-  // Lemon Squeezy
+  // Lemon Squeezy (kept so existing rows don't break)
   lsCustomerId         String?  @unique
   lsSubscriptionId     String?  @unique
   lsVariantId          String?
+
+  // Paystack
+  paystackCustomerId   String?
+  paystackSubCode      String?  @unique  // subscription_code
+  paystackEmailToken   String?           // needed to cancel subscription
+  paystackPlanCode     String?           // PLN_xxxx
 
   // Referral system
   referralCode         String?  @unique  // user's own code to share
