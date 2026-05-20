@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma'
 import Link from 'next/link'
 import CoverGrid from '@/components/CoverGrid'
 import ReferralCard from '@/components/ReferralCard'
+import RefApply from '@/components/RefApply'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -45,6 +46,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-950">
+      {/* Auto-apply referral code captured at sign-up */}
+      <RefApply />
+
       {/* Top bar */}
       <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -117,10 +121,15 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <QuickAction href="/pricing" icon="⬆" title="Upgrade Plan" desc="Get unlimited covers & PDF export" />
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+          {user.plan === 'FREE' ? (
+            <QuickAction href="/pricing" icon="⬆️" title="Upgrade Plan" desc="Get unlimited covers & PDF export" />
+          ) : (
+            <QuickActionExternal href="/api/billing/portal" icon="💳" title="Manage Billing" desc="Invoices, cancel, or change plan" />
+          )}
           <QuickAction href="/generate" icon="✨" title="New Cover" desc="Generate a new book cover" />
           <QuickAction href="/history" icon="📚" title="All Covers" desc="View and manage your covers" />
+          <QuickAction href="/affiliate" icon="💰" title="Earn Commissions" desc="Refer authors, earn up to 30%" />
         </div>
 
         {/* Referral Card */}
@@ -154,5 +163,15 @@ function QuickAction({ href, icon, title, desc }: { href: string; icon: string; 
       <p className="text-sm font-semibold text-white group-hover:text-violet-300 transition">{title}</p>
       <p className="text-xs text-gray-500 mt-1">{desc}</p>
     </Link>
+  )
+}
+
+function QuickActionExternal({ href, icon, title, desc }: { href: string; icon: string; title: string; desc: string }) {
+  return (
+    <a href={href} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition group">
+      <div className="text-2xl mb-2">{icon}</div>
+      <p className="text-sm font-semibold text-white group-hover:text-violet-300 transition">{title}</p>
+      <p className="text-xs text-gray-500 mt-1">{desc}</p>
+    </a>
   )
 }

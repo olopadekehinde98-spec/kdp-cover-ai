@@ -1,5 +1,7 @@
 import { SignUp } from '@clerk/nextjs'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import RefCapture from '@/components/RefCapture'
 
 export default function SignUpPage() {
   return (
@@ -18,6 +20,11 @@ export default function SignUpPage() {
           </div>
         </div>
       </header>
+
+      {/* Capture ?ref= from URL into sessionStorage (runs client-side only) */}
+      <Suspense fallback={null}>
+        <RefCapture />
+      </Suspense>
 
       {/* Sign-up form */}
       <div className="flex-1 flex items-center justify-center py-10 px-4">

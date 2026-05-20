@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
       titleStyle: parsed.data.titleStyle,
       isbn: parsed.data.isbn,
       barcodeImageBase64: parsed.data.barcodeImageBase64,
+      isFreePlan: user.plan === 'FREE',
     }
 
     const validation = validateExport(exportInput)

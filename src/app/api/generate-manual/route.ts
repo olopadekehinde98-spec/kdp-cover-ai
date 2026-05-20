@@ -9,8 +9,6 @@ import type { KDPInput } from '@/lib/kdp-engine/types'
 
 export const maxDuration = 60
 
-// Allow larger body for base64 image uploads (~8MB limit)
-export const config = { api: { bodyParser: { sizeLimit: '10mb' } } }
 
 const schema = z.object({
   title: z.string().min(1).max(200),

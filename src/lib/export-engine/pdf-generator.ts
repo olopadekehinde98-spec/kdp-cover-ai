@@ -433,7 +433,32 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
     })
   }
 
-  // ── 9. TRIM MARKS ─────────────────────────────────────────────
+  // ── 9. FREE PLAN WATERMARK ────────────────────────────────────
+  if (input.isFreePlan) {
+    const wmText  = 'KDP COVER AI - FREE PLAN'
+    const wmSize  = 36
+    const wmFont  = boldFont
+    const wmColor = rgb(1, 1, 1)
+    const wmOpacity = 0.18
+
+    // Diagonal across front cover
+    const cx = frontStartPt + frontWidthPt / 2
+    const cy = pageHeightPt / 2
+
+    for (let i = -2; i <= 2; i++) {
+      page.drawText(wmText, {
+        x: cx - wmFont.widthOfTextAtSize(wmText, wmSize) / 2,
+        y: cy + i * (wmSize * 2.5),
+        size: wmSize,
+        font: wmFont,
+        color: wmColor,
+        opacity: wmOpacity,
+        rotate: degrees(35),
+      })
+    }
+  }
+
+  // ── 10. TRIM MARKS ────────────────────────────────────────────
   const markLen = 0.1875 * PT
   const corners = [
     { cx: bleedPt,               cy: pageHeightPt - bleedPt },

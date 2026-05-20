@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
-import AffiliateCTA from '@/components/AffiliateCTA'
+import AffiliateCTA from '@/components/AffiliateCTAWrapper'
 
 // Commission matrix: [tier index][plan index] = percentage
 const TIERS = [

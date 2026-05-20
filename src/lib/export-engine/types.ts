@@ -14,6 +14,7 @@ export interface ExportInput {
   titleStyle?: 'bold-sans' | 'serif' | 'serif-italic' | 'sans-oblique' | 'courier-bold' | 'serif-light'
   isbn?: string             // e.g. "978-0-00-000000-0"
   barcodeImageBase64?: string  // data:image/png;base64,... or jpeg
+  isFreePlan?: boolean      // if true, draw diagonal watermark on cover
 }
 
 export interface ExportResult {
