@@ -220,7 +220,7 @@ export default function PricingPage() {
               },
               {
                 q: 'What payment methods are accepted?',
-                a: 'All major credit cards, PayPal, and many local payment methods via Lemon Squeezy. Secure checkout, no card data touches our servers.',
+                a: 'All major credit and debit cards accepted worldwide via Paddle. Secure checkout — no card data ever touches our servers.',
               },
               {
                 q: 'Can I cancel anytime?',

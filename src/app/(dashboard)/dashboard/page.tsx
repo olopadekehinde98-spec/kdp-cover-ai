@@ -5,6 +5,7 @@ import Link from 'next/link'
 import CoverGrid from '@/components/CoverGrid'
 import ReferralCard from '@/components/ReferralCard'
 import RefApply from '@/components/RefApply'
+import BillingPortalButton from '@/components/BillingPortalButton'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -125,7 +126,7 @@ export default async function DashboardPage() {
           {user.plan === 'FREE' ? (
             <QuickAction href="/pricing" icon="⬆️" title="Upgrade Plan" desc="Get unlimited covers & PDF export" />
           ) : (
-            <QuickActionExternal href="/api/billing/portal" icon="💳" title="Manage Billing" desc="Invoices, cancel, or change plan" />
+            <BillingPortalButton />
           )}
           <QuickAction href="/generate" icon="✨" title="New Cover" desc="Generate a new book cover" />
           <QuickAction href="/history" icon="📚" title="All Covers" desc="View and manage your covers" />

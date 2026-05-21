@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db/prisma'
 import { verifyPaddleWebhook } from '@/lib/paddle/client'
 
 const PLAN_LIMITS: Record<string, number> = {
-  STARTER: 10,
+  STARTER: 15,
   PRO:     999999,
   AGENCY:  999999,
 }

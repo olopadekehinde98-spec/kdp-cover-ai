@@ -4,7 +4,7 @@ import { verifyPaystackWebhook } from '@/lib/paystack/client'
 
 // Generation limits per plan
 const PLAN_LIMITS: Record<string, number> = {
-  STARTER: 10,
+  STARTER: 15,
   PRO:     999999,
   AGENCY:  999999,
 }
