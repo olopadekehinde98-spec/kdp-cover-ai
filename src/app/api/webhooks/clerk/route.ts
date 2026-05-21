@@ -55,11 +55,19 @@ export async function POST(req: NextRequest) {
     const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
     const referralCode = await uniqueReferralCode()
 
+    // Owner email gets AGENCY plan automatically
+    const isOwner = email === process.env.OWNER_EMAIL
+    const plan = isOwner ? 'AGENCY' : 'FREE'
+    const generationsLimit = isOwner ? 999999 : 3
+
     const existing = await prisma.user.findFirst({ where: { clerkId: data.id } })
     if (existing) {
       await prisma.user.update({
         where: { id: existing.id },
-        data: { email, name, imageUrl: data.image_url },
+        data: {
+          email, name, imageUrl: data.image_url,
+          ...(isOwner ? { plan: 'AGENCY', generationsLimit: 999999, subscriptionStatus: 'active' } : {}),
+        },
       })
     } else {
       await prisma.user.create({
@@ -68,9 +76,10 @@ export async function POST(req: NextRequest) {
           email,
           name,
           imageUrl: data.image_url,
-          plan: 'FREE',
-          generationsLimit: 3,
-          referralCode,      // unique referral code for every new user
+          plan,
+          generationsLimit,
+          subscriptionStatus: isOwner ? 'active' : 'free',
+          referralCode,
         },
       })
     }

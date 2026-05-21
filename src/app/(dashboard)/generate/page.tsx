@@ -35,7 +35,7 @@ const FONT_SCALE_LABELS: Record<string, string> = {
   '0.6': 'Small', '0.8': 'Medium-Small', '1.0': 'Medium (default)', '1.2': 'Large', '1.4': 'Extra Large',
 }
 
-type Method = 'ai' | 'upload' | 'kdp'
+type Method = 'ai' | 'upload' | 'kdp' | 'book'
 type TitleStyle = 'bold-sans' | 'serif' | 'serif-italic' | 'sans-oblique' | 'courier-bold' | 'serif-light'
 
 interface FormData {
@@ -92,6 +92,132 @@ function GeneratePage() {
   const [barcodeFileName, setBarcodeFileName] = useState('')
   const barcodeInputRef = useRef<HTMLInputElement>(null)
 
+  // ── DRAFT AUTO-SAVE ──────────────────────────────────────────────
+  const DRAFT_KEY = 'kdp_cover_draft'
+  const [hasDraft, setHasDraft]     = useState(false)
+  const [draftMsg, setDraftMsg]     = useState('')
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    if (fromCoverId) return
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        const { form: f } = JSON.parse(saved)
+        if (f?.title) { setHasDraft(true); setDraftMsg(f.title) }
+      }
+    } catch {}
+  }, [])
+
+  // Save draft 600ms after any form change
+  useEffect(() => {
+    if (fromCoverId) return
+    const t = setTimeout(() => {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, method, step })) } catch {}
+    }, 600)
+    return () => clearTimeout(t)
+  }, [form, method, step])
+
+  function restoreDraft() {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY)
+      if (!saved) return
+      const { form: f, method: m, step: s } = JSON.parse(saved)
+      if (f) setForm({ ...INITIAL, ...f })
+      if (m) setMethod(m)
+      if (s && s !== 99) setStep(s)
+      setHasDraft(false)
+    } catch {}
+  }
+
+  function discardDraft() {
+    try { localStorage.removeItem(DRAFT_KEY) } catch {}
+    setHasDraft(false)
+  }
+
+  // ── BOOK FILE UPLOAD (Method 4) ───────────────────────────────────
+  const [bookFile, setBookFile]               = useState<string | null>(null)
+  const [bookFileName, setBookFileName]       = useState('')
+  const [bookSubStep, setBookSubStep]         = useState<'upload' | 'design-choice' | 'design'>('upload')
+  const [bookDesign, setBookDesign]           = useState<'ai' | 'upload' | null>(null)
+  const [bookExtractLoading, setBookExtractLoading] = useState(false)
+  const [bookExtractError, setBookExtractError]     = useState('')
+  const bookFileRef = useRef<HTMLInputElement>(null)
+
+  // Also used for inline book upload on the description field
+  const [inlineBookLoading, setInlineBookLoading] = useState(false)
+  const [inlineBookError, setInlineBookError]     = useState('')
+  const inlineBookRef = useRef<HTMLInputElement>(null)
+
+  function readFileAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = e => resolve(e.target?.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function handleBookFileSelect(e: React.ChangeEvent<HTMLInputElement>, mode: 'method4' | 'inline') {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const allowed = ['text/plain', 'application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if (!allowed.includes(file.type) && !file.name.match(/\.(txt|pdf|docx?|epub)$/i)) {
+      if (mode === 'method4') setBookExtractError('Only TXT, PDF, DOCX, or EPUB supported.')
+      else setInlineBookError('Only TXT, PDF, DOCX, or EPUB supported.')
+      return
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      if (mode === 'method4') setBookExtractError('File must be under 20MB.')
+      else setInlineBookError('File must be under 20MB.')
+      return
+    }
+    if (mode === 'method4') { setBookExtractLoading(true); setBookExtractError('') }
+    else { setInlineBookLoading(true); setInlineBookError('') }
+
+    try {
+      let base64 = ''
+      if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+        // Read text directly in browser
+        const text = await file.text()
+        base64 = btoa(unescape(encodeURIComponent(text.slice(0, 8000))))
+      } else {
+        base64 = await readFileAsBase64(file)
+        base64 = base64.split(',')[1] ?? base64
+      }
+
+      const res = await fetch('/api/book-extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileBase64: base64,
+          fileName: file.name,
+          title: form.title,
+          genre: form.genre,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Extraction failed.')
+
+      if (data.description) update('description', data.description)
+      if (data.title && !form.title) update('title', data.title)
+      if (data.authorName && !form.authorName) update('authorName', data.authorName)
+
+      if (mode === 'method4') {
+        setBookFile(base64); setBookFileName(file.name)
+        setBookSubStep('design-choice')
+      }
+    } catch (err: any) {
+      if (mode === 'method4') setBookExtractError(err.message)
+      else setInlineBookError(err.message)
+    } finally {
+      if (mode === 'method4') setBookExtractLoading(false)
+      else setInlineBookLoading(false)
+    }
+  }
+
+  // ── PRE-FILL FROM AN EXISTING COVER ──────────────────────────────
   // Pre-fill from an existing cover when ?from=coverId
   useEffect(() => {
     if (!fromCoverId) return
@@ -265,7 +391,15 @@ function GeneratePage() {
     finally { setExportingFormat(null) }
   }
 
-  function resetAll() { setMethod(null); setStep(1); setResult(null); setKdpSubStep('specs'); setKdpDesign(null); setUploadedImage(null); setUploadFileName(''); setIsbn(''); setBarcodeImage(null); setBarcodeFileName(''); setError('') }
+  function resetAll() {
+    setMethod(null); setStep(1); setResult(null)
+    setKdpSubStep('specs'); setKdpDesign(null)
+    setUploadedImage(null); setUploadFileName('')
+    setIsbn(''); setBarcodeImage(null); setBarcodeFileName('')
+    setBookFile(null); setBookFileName(''); setBookSubStep('upload'); setBookDesign(null)
+    setError(''); setInlineBookError('')
+    try { localStorage.removeItem(DRAFT_KEY) } catch {}
+  }
 
   // ── METHOD SELECTION ────────────────────────────────────────────
   if (!method) {
@@ -273,7 +407,21 @@ function GeneratePage() {
       <div className="min-h-screen bg-gray-950 py-10 px-4">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-2">Create Your KDP Cover</h1>
-          <p className="text-gray-400 mb-8">Choose how you want to create your book cover.</p>
+          <p className="text-gray-400 mb-6">Choose how you want to create your book cover.</p>
+
+          {/* Draft restore banner */}
+          {hasDraft && (
+            <div className="mb-6 bg-amber-950/40 border border-amber-700/50 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-amber-300 font-semibold text-sm">📝 Unsaved Draft Found</p>
+                <p className="text-amber-400/70 text-xs mt-0.5">You have a saved draft{draftMsg ? ` — "${draftMsg}"` : ''} from a previous session.</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button onClick={restoreDraft} className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition font-semibold">Restore Draft →</button>
+                <button onClick={discardDraft} className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 px-3 py-2 rounded-xl transition">Discard</button>
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-4">
             <MethodCard
@@ -297,7 +445,141 @@ function GeneratePage() {
               tags={['Amazon KDP template', 'Exact spine width', 'AI or Upload design']}
               onClick={() => { setMethod('kdp'); setKdpSubStep('specs') }}
             />
+            <MethodCard
+              emoji="📖" color="orange"
+              title="Upload Your Book"
+              desc="Upload your manuscript (PDF, TXT, DOCX). AI reads your book, writes the back cover description automatically, then you choose AI or upload for the cover image."
+              tags={['Upload manuscript', 'AI writes description', 'AI or Upload cover']}
+              onClick={() => { setMethod('book'); setBookSubStep('upload') }}
+            />
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── METHOD 4: UPLOAD YOUR BOOK ─────────────────────────────────
+  if (method === 'book') {
+    return (
+      <div className="min-h-screen bg-gray-950 py-10 px-4">
+        <div className="max-w-3xl mx-auto">
+          <button onClick={resetAll} className="text-gray-500 hover:text-white text-sm mb-4 block">← Back to methods</button>
+          <h1 className="text-2xl font-bold text-white mb-6">📖 Upload Your Book</h1>
+          {bookExtractError && <div className="mb-4 p-4 bg-red-900/40 border border-red-700 rounded-xl text-red-300 text-sm">{bookExtractError}</div>}
+          {error && <div className="mb-4 p-4 bg-red-900/40 border border-red-700 rounded-xl text-red-300 text-sm">{error}</div>}
+
+          {/* Step A: Upload book file */}
+          {bookSubStep === 'upload' && (
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6 space-y-5">
+              <div className="bg-violet-950/30 border border-violet-700/40 rounded-xl p-4 text-sm space-y-2">
+                <p className="text-violet-300 font-bold">How this works</p>
+                <ol className="list-decimal list-inside text-gray-300 space-y-1.5">
+                  <li>Upload your manuscript (PDF, TXT, DOCX, or EPUB)</li>
+                  <li>AI reads the first section and writes your back cover description</li>
+                  <li>It also tries to extract your title and author name</li>
+                  <li>You review and edit everything before generating</li>
+                  <li>Choose AI or upload image for the cover art</li>
+                </ol>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Book Manuscript File</label>
+                <div
+                  onClick={() => bookFileRef.current?.click()}
+                  className="border-2 border-dashed border-gray-700 hover:border-violet-500 rounded-xl p-8 text-center cursor-pointer transition group">
+                  {bookExtractLoading ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-violet-300 font-medium text-sm">AI is reading your book...</p>
+                      <p className="text-gray-500 text-xs">This may take 10–20 seconds</p>
+                    </div>
+                  ) : bookFileName ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-3xl">📄</span>
+                      <p className="text-white font-medium text-sm">{bookFileName}</p>
+                      <p className="text-violet-400 text-xs">Click to change file</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-3xl group-hover:scale-110 transition-transform">📖</span>
+                      <p className="text-gray-300 font-medium text-sm">Click to upload your book</p>
+                      <p className="text-gray-600 text-xs">PDF, TXT, DOCX, EPUB — up to 20MB</p>
+                    </div>
+                  )}
+                </div>
+                <input ref={bookFileRef} type="file" accept=".pdf,.txt,.doc,.docx,.epub"
+                  className="hidden" onChange={e => handleBookFileSelect(e, 'method4')} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Trim Size</label>
+                  <select value={form.trimSize} onChange={e => update('trimSize', e.target.value)} className={inp()}>
+                    {TRIM_SIZES.map(ts => <option key={ts.value} value={ts.value}>{ts.label}{ts.popular ? ' ★' : ''}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Page Count</label>
+                  <input type="number" min={24} max={828} value={form.pageCount}
+                    onChange={e => update('pageCount', parseInt(e.target.value))} className={inp()} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Interior</label>
+                  <select value={form.paperType} onChange={e => update('paperType', e.target.value)} className={inp()}>
+                    <option value="black_and_white">Black & White</option>
+                    <option value="color">Color</option>
+                    <option value="premium_color">Premium Color</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Cover Type</label>
+                  <select value={form.coverType} onChange={e => update('coverType', e.target.value)} className={inp()}>
+                    <option value="paperback">Paperback</option>
+                    <option value="hardcover">Hardcover</option>
+                  </select>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-600">
+                No manuscript? You can still fill in the description manually — just upload a blank TXT file or skip to Method 1.
+              </p>
+            </div>
+          )}
+
+          {/* Step B: Choose AI or Upload cover */}
+          {bookSubStep === 'design-choice' && (
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6 space-y-4">
+              <div className="bg-green-900/20 border border-green-700/40 rounded-xl p-4">
+                <p className="text-green-300 font-semibold text-sm mb-1">✅ Book content extracted!</p>
+                <p className="text-gray-400 text-xs">AI has written your back cover description based on your manuscript. You can review and edit it in the next step.</p>
+              </div>
+              <h2 className="text-lg font-semibold text-white">Choose Your Cover Design</h2>
+              <p className="text-gray-400 text-sm">How should the cover image be created?</p>
+
+              <button onClick={() => { setBookDesign('ai'); setBookSubStep('design'); setStep(2) }}
+                className="w-full text-left bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-violet-500 rounded-xl p-5 transition group">
+                <div className="text-2xl mb-2">✨</div>
+                <div className="text-white font-semibold group-hover:text-violet-300">AI Creates the Cover Image</div>
+                <div className="text-gray-400 text-sm mt-1">Describe the style you want — AI generates a custom image that matches your genre.</div>
+              </button>
+
+              <button onClick={() => { setBookDesign('upload'); setBookSubStep('design'); setStep(2) }}
+                className="w-full text-left bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-blue-500 rounded-xl p-5 transition group">
+                <div className="text-2xl mb-2">🖼️</div>
+                <div className="text-white font-semibold group-hover:text-blue-300">I Upload My Own Cover Image</div>
+                <div className="text-gray-400 text-sm mt-1">Upload your own designed front cover image — system adds text and exports full-wrap PDF.</div>
+              </button>
+
+              <button onClick={() => setBookSubStep('upload')} className="w-full bg-gray-800 hover:bg-gray-700 text-gray-400 py-2 rounded-xl text-sm transition">
+                ← Back
+              </button>
+            </div>
+          )}
+
+          {/* Step C: Main form steps (reuses existing renderMainSteps) */}
+          {bookSubStep === 'design' && renderMainSteps()}
         </div>
       </div>
     )
@@ -414,8 +696,8 @@ function GeneratePage() {
   }
 
   function renderMainSteps() {
-    const isUploadMode = method === 'upload' || kdpDesign === 'upload'
-    const isAIMode = method === 'ai' || kdpDesign === 'ai'
+    const isUploadMode = method === 'upload' || kdpDesign === 'upload' || bookDesign === 'upload'
+    const isAIMode = method === 'ai' || kdpDesign === 'ai' || bookDesign === 'ai'
 
     return (
       <div className="space-y-4">
@@ -459,17 +741,27 @@ function GeneratePage() {
             <div className="border-t border-gray-800 pt-4 space-y-4">
               <p className="text-sm font-semibold text-gray-300">Back Cover Text</p>
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm text-gray-400">About The Book <span className="text-gray-600">(leave empty — AI writes it)</span></label>
-                  <button onClick={handleAIDescription} disabled={aiDescLoading}
-                    className="flex items-center gap-1.5 text-xs bg-violet-900/50 hover:bg-violet-800/60 border border-violet-700/50 text-violet-300 px-3 py-1.5 rounded-lg transition disabled:opacity-50 font-medium">
-                    {aiDescLoading ? <span className="w-3 h-3 border border-violet-400 border-t-transparent rounded-full animate-spin" /> : '✨'}
-                    {aiDescLoading ? 'Writing...' : 'AI Write (Pro)'}
-                  </button>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                  <label className="text-sm text-gray-400">About The Book</label>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => inlineBookRef.current?.click()} disabled={inlineBookLoading}
+                      className="flex items-center gap-1.5 text-xs bg-blue-900/50 hover:bg-blue-800/60 border border-blue-700/50 text-blue-300 px-3 py-1.5 rounded-lg transition disabled:opacity-50 font-medium">
+                      {inlineBookLoading ? <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" /> : '📖'}
+                      {inlineBookLoading ? 'Reading...' : 'Upload Book'}
+                    </button>
+                    <button onClick={handleAIDescription} disabled={aiDescLoading}
+                      className="flex items-center gap-1.5 text-xs bg-violet-900/50 hover:bg-violet-800/60 border border-violet-700/50 text-violet-300 px-3 py-1.5 rounded-lg transition disabled:opacity-50 font-medium">
+                      {aiDescLoading ? <span className="w-3 h-3 border border-violet-400 border-t-transparent rounded-full animate-spin" /> : '✨'}
+                      {aiDescLoading ? 'Writing...' : 'AI Write (Pro)'}
+                    </button>
+                  </div>
                 </div>
+                <input ref={inlineBookRef} type="file" accept=".pdf,.txt,.doc,.docx,.epub"
+                  className="hidden" onChange={e => handleBookFileSelect(e, 'inline')} />
+                {inlineBookError && <p className="text-red-400 text-xs mb-2">{inlineBookError}</p>}
                 {aiDescError && <p className="text-red-400 text-xs mb-2">{aiDescError}</p>}
                 <textarea value={form.description} onChange={e => update('description', e.target.value)}
-                  rows={4} placeholder="Write your book description, or click 'AI Write' to generate..."
+                  rows={4} placeholder="Write your description, upload your book, or click AI Write..."
                   className={inp('resize-none')} />
               </div>
               <div>
@@ -543,8 +835,11 @@ function GeneratePage() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={() => { if (method === 'kdp') setKdpSubStep('design-choice'); else setStep(1) }}
-                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 rounded-xl transition">← Back</button>
+              <button onClick={() => {
+                if (method === 'kdp') setKdpSubStep('design-choice')
+                else if (method === 'book') setBookSubStep('design-choice')
+                else setStep(1)
+              }} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 rounded-xl transition">← Back</button>
               <button onClick={() => setStep(3)} disabled={!form.title || !form.authorName}
                 className="flex-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition">Continue →</button>
             </div>
@@ -833,13 +1128,15 @@ function MethodCard({ emoji, color, title, desc, tags, onClick }: {
 }) {
   const colors: Record<string, string> = {
     violet: 'hover:border-violet-500 group-hover:text-violet-300',
-    blue: 'hover:border-blue-500 group-hover:text-blue-300',
-    green: 'hover:border-green-500 group-hover:text-green-300',
+    blue:   'hover:border-blue-500 group-hover:text-blue-300',
+    green:  'hover:border-green-500 group-hover:text-green-300',
+    orange: 'hover:border-orange-500 group-hover:text-orange-300',
   }
   const tagColors: Record<string, string> = {
     violet: 'bg-violet-900/50 text-violet-300 border-violet-700',
-    blue: 'bg-blue-900/50 text-blue-300 border-blue-700',
-    green: 'bg-green-900/50 text-green-300 border-green-700',
+    blue:   'bg-blue-900/50 text-blue-300 border-blue-700',
+    green:  'bg-green-900/50 text-green-300 border-green-700',
+    orange: 'bg-orange-900/50 text-orange-300 border-orange-700',
   }
   return (
     <button onClick={onClick} className={`w-full text-left bg-gray-900 border border-gray-700 rounded-2xl p-6 transition group ${colors[color]}`}>
