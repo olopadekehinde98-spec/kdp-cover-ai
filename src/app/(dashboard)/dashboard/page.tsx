@@ -50,24 +50,6 @@ export default async function DashboardPage() {
       {/* Auto-apply referral code captured at sign-up */}
       <RefApply />
 
-      {/* Top bar */}
-      <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">K</div>
-          <span className="font-semibold text-white">KDP Cover AI</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-400 text-sm">{user.email}</span>
-          <span className={`text-xs font-semibold px-2 py-1 rounded-full
-            ${user.plan === 'FREE' ? 'bg-gray-800 text-gray-400' :
-              user.plan === 'PRO' ? 'bg-violet-900/50 text-violet-300' :
-              user.plan === 'AGENCY' ? 'bg-amber-900/50 text-amber-300' :
-              'bg-blue-900/50 text-blue-300'}`}>
-            {user.plan}
-          </span>
-        </div>
-      </nav>
-
       <div className="max-w-6xl mx-auto px-6 py-10">
         {/* Welcome */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
