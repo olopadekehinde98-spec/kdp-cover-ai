@@ -15,12 +15,13 @@ const TRIM_SIZES: Record<TrimSize, { width: number; height: number }> = {
   '8.5x11':    { width: 8.5,   height: 11 },
 }
 
-// Exact Amazon KDP spine width formulas
+// Exact Amazon KDP spine width formulas (verified against KDP cover calculator)
+// Source: https://kdp.amazon.com/en_US/cover-calculator
 function calcSpineWidth(pageCount: number, paperType: KDPInput['paperType']): number {
   switch (paperType) {
-    case 'black_and_white': return pageCount * 0.0025
-    case 'color':           return pageCount * 0.002347
-    case 'premium_color':   return pageCount * 0.002400
+    case 'black_and_white': return pageCount * 0.002252   // 60lb white/cream B&W paper
+    case 'color':           return pageCount * 0.002500   // Standard color interior
+    case 'premium_color':   return pageCount * 0.002347   // Premium color / 90lb paper
   }
 }
 

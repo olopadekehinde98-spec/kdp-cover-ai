@@ -34,7 +34,7 @@ const POSTS: Record<string, {
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 font-mono text-sm">
           <p className="text-violet-300 mb-2">// KDP spine width formulas</p>
           <p className="text-gray-300">Black &amp; White: pages × 0.002252"</p>
-          <p className="text-gray-300">Color: pages × 0.0025"</p>
+          <p className="text-gray-300">Color: pages × 0.002500"</p>
           <p className="text-gray-300">Premium Color: pages × 0.002347"</p>
           <p className="text-gray-400 mt-2 text-xs">Minimum spine: 0.0625" (any paper type)</p>
         </div>

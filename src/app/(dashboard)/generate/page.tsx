@@ -1159,8 +1159,8 @@ function KDPCalc({ trimSize, pageCount, paperType }: { trimSize: string; pageCou
   const parts = trimSize.split('x').map(Number)
   const [w, h] = parts
   if (!w || !h) return null
-  const thick: Record<string, number> = { black_and_white: 0.0025, color: 0.002347, premium_color: 0.002400 }
-  const spine = pageCount * (thick[paperType] ?? 0.0025)
+  const thick: Record<string, number> = { black_and_white: 0.002252, color: 0.002500, premium_color: 0.002347 }
+  const spine = pageCount * (thick[paperType] ?? 0.002252)
   const tw = w * 2 + spine + 0.25
   const th = h + 0.25
   return (

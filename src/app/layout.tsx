@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
+import Script from 'next/script'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://kdp-cover-ai.vercel.app'),
+  metadataBase: new URL('https://kdp-cover-ai-f1kw.vercel.app'),
   title: 'KDP Cover AI — Free AI Book Cover Generator for Amazon KDP',
   description: 'Generate professional full-wrap Amazon KDP book covers with AI in seconds. Front cover, spine & back — exact 300 DPI dimensions, ready to upload. Free to start.',
   keywords: ['Amazon KDP', 'book cover generator', 'AI book cover', 'KDP cover maker', 'self-publishing', 'print-ready PDF', 'full wrap cover'],
@@ -39,12 +40,24 @@ export const metadata: Metadata = {
 }
 
 const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+const gaId = process.env.NEXT_PUBLIC_GA_ID
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const content = (
     <html lang="en">
       <body className={`${inter.className} bg-gray-950 text-white antialiased min-h-screen`}>
         {children}
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}');`}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   )

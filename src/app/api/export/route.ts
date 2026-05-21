@@ -94,38 +94,59 @@ export async function POST(req: NextRequest) {
     const result = await generateKDPPdf(exportInput)
     const safeName = encodeURIComponent(cover.title.replace(/[^a-z0-9]/gi, '-').toLowerCase())
 
-    // ---- PNG / JPG export — return the full-wrap AI-generated cover image ----
+    // ---- PNG / JPG export — front-cover portrait crop only (no text, no barcode) ----
     if (format === 'png' || format === 'jpg') {
-      // The full-wrap AI image is stored in cover.imageUrl (base64 or URL)
-      let imgBuffer: Buffer
+      const sharp = (await import('sharp')).default
 
+      // Fetch / decode the full-wrap AI image
+      let imgBuffer: Buffer
       if (cover.imageUrl.startsWith('data:')) {
-        // base64 stored in DB — decode it
         const base64 = cover.imageUrl.split(',')[1]
         if (!base64) throw new Error('Invalid image data')
         imgBuffer = Buffer.from(base64, 'base64')
       } else {
-        // URL — fetch it
         const res = await fetch(cover.imageUrl)
         if (!res.ok) throw new Error('Could not fetch cover image')
-        const arr = await res.arrayBuffer()
-        imgBuffer = Buffer.from(arr)
+        imgBuffer = Buffer.from(await res.arrayBuffer())
       }
 
-      // Determine the actual mime type from the stored image
-      const storedMime = cover.imageUrl.startsWith('data:')
-        ? (cover.imageUrl.split(';')[0].split(':')[1] ?? 'image/jpeg')
-        : 'image/jpeg'
+      // Introspect actual pixel dimensions of the stored image
+      const meta = await sharp(imgBuffer).metadata()
+      const imgW = meta.width ?? dims.totalWidthPx
+      const imgH = meta.height ?? dims.totalHeightPx
 
-      const mimeType = storedMime.includes('png') ? 'image/png' : 'image/jpeg'
-      const ext = mimeType === 'image/png' ? 'png' : 'jpg'
+      // Calculate front-cover crop rectangle proportionally
+      // frontCoverStartX and trimWidth are in inches; scale to actual image pixels
+      const scaleX = imgW / dims.totalWidth
+      const cropLeft  = Math.round(dims.frontCoverStartX * scaleX)
+      const cropWidth = Math.min(Math.round(dims.trimWidth * scaleX), imgW - cropLeft)
 
-      return new NextResponse(new Uint8Array(imgBuffer), {
+      // Resize the crop to the correct 300-DPI output size
+      const outW = Math.round(dims.trimWidth  * dims.ppi)
+      const outH = Math.round(dims.trimHeight * dims.ppi)
+
+      let croppedBuffer: Buffer
+      if (format === 'png') {
+        croppedBuffer = await sharp(imgBuffer)
+          .extract({ left: cropLeft, top: 0, width: cropWidth, height: imgH })
+          .resize(outW, outH, { fit: 'fill' })
+          .png({ compressionLevel: 8 })
+          .toBuffer()
+      } else {
+        croppedBuffer = await sharp(imgBuffer)
+          .extract({ left: cropLeft, top: 0, width: cropWidth, height: imgH })
+          .resize(outW, outH, { fit: 'fill' })
+          .jpeg({ quality: 95 })
+          .toBuffer()
+      }
+
+      const mimeType = format === 'png' ? 'image/png' : 'image/jpeg'
+      return new NextResponse(new Uint8Array(croppedBuffer), {
         status: 200,
         headers: {
           'Content-Type': mimeType,
-          'Content-Disposition': `attachment; filename="${safeName}-kdp-cover-fullwrap.${ext}"`,
-          'Content-Length': imgBuffer.length.toString(),
+          'Content-Disposition': `attachment; filename="${safeName}-front-cover.${format}"`,
+          'Content-Length': croppedBuffer.length.toString(),
         },
       })
     }
