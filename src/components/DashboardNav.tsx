@@ -26,6 +26,7 @@ export default function DashboardNav({ plan, email, firstName }: Props) {
     { href: '/generate',  label: '✨ Generate' },
     { href: '/history',   label: 'My Covers' },
     { href: '/pricing',   label: 'Pricing' },
+    { href: '/account',   label: 'Profile' },
     { href: '/help',      label: 'Help' },
   ]
 

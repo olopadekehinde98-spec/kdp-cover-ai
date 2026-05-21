@@ -15,6 +15,7 @@ export interface ExportInput {
   isbn?: string             // e.g. "978-0-00-000000-0"
   barcodeImageBase64?: string  // data:image/png;base64,... or jpeg
   isFreePlan?: boolean      // if true, draw diagonal watermark on cover
+  isAgencyPlan?: boolean    // if true, omit "KDP Cover AI" creator metadata (white-label)
 }
 
 export interface ExportResult {

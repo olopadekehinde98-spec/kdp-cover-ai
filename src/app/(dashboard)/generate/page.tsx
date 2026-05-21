@@ -193,6 +193,44 @@ function GeneratePage() {
   }
 
   const [exportingFormat, setExportingFormat] = useState<string | null>(null)
+  const [aiDescLoading, setAiDescLoading] = useState(false)
+  const [aiDescError, setAiDescError] = useState('')
+  const [brandSaved, setBrandSaved] = useState(false)
+
+  async function handleAIDescription() {
+    if (!form.title || !form.genre) { setAiDescError('Enter a title and genre first.'); return }
+    setAiDescLoading(true); setAiDescError('')
+    try {
+      const res = await fetch('/api/ai-description', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title, genre: form.genre, authorName: form.authorName, description: form.description }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'AI description failed.')
+      update('description', data.description)
+    } catch (e: any) { setAiDescError(e.message) }
+    finally { setAiDescLoading(false) }
+  }
+
+  function saveBrandPreset() {
+    if (typeof window === 'undefined') return
+    const preset = { titleStyle: form.titleStyle, titleFontScale: form.titleFontScale, genre: form.genre, authorName: form.authorName }
+    localStorage.setItem('kdp_brand_preset', JSON.stringify(preset))
+    setBrandSaved(true); setTimeout(() => setBrandSaved(false), 2000)
+  }
+
+  function loadBrandPreset() {
+    if (typeof window === 'undefined') return
+    const raw = localStorage.getItem('kdp_brand_preset')
+    if (!raw) return
+    try {
+      const preset = JSON.parse(raw)
+      if (preset.titleStyle) update('titleStyle', preset.titleStyle)
+      if (preset.titleFontScale) update('titleFontScale', preset.titleFontScale)
+      if (preset.genre) update('genre', preset.genre)
+      if (preset.authorName) update('authorName', preset.authorName)
+    } catch {}
+  }
 
   async function handleExport(format: 'pdf' | 'png' | 'jpg' = 'pdf') {
     if (!result?.coverId) return
@@ -421,9 +459,17 @@ function GeneratePage() {
             <div className="border-t border-gray-800 pt-4 space-y-4">
               <p className="text-sm font-semibold text-gray-300">Back Cover Text</p>
               <div>
-                <label className="block text-sm text-gray-400 mb-2">About The Book <span className="text-gray-600">(leave empty — AI writes it)</span></label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm text-gray-400">About The Book <span className="text-gray-600">(leave empty — AI writes it)</span></label>
+                  <button onClick={handleAIDescription} disabled={aiDescLoading}
+                    className="flex items-center gap-1.5 text-xs bg-violet-900/50 hover:bg-violet-800/60 border border-violet-700/50 text-violet-300 px-3 py-1.5 rounded-lg transition disabled:opacity-50 font-medium">
+                    {aiDescLoading ? <span className="w-3 h-3 border border-violet-400 border-t-transparent rounded-full animate-spin" /> : '✨'}
+                    {aiDescLoading ? 'Writing...' : 'AI Write (Pro)'}
+                  </button>
+                </div>
+                {aiDescError && <p className="text-red-400 text-xs mb-2">{aiDescError}</p>}
                 <textarea value={form.description} onChange={e => update('description', e.target.value)}
-                  rows={4} placeholder="Write your book description, or leave empty for AI to generate..."
+                  rows={4} placeholder="Write your book description, or click 'AI Write' to generate..."
                   className={inp('resize-none')} />
               </div>
               <div>
@@ -478,6 +524,22 @@ function GeneratePage() {
                   <span>Small</span><span>Medium</span><span>X-Large</span>
                 </div>
               </div>
+            </div>
+
+            {/* Brand Preset (Series Branding) */}
+            <div className="border-t border-gray-800 pt-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-gray-500 mr-1">Series Branding:</span>
+              <button onClick={saveBrandPreset}
+                className="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-3 py-1.5 rounded-lg transition">
+                {brandSaved ? '✅ Saved!' : '💾 Save Brand Preset'}
+              </button>
+              {typeof window !== 'undefined' && localStorage.getItem('kdp_brand_preset') && (
+                <button onClick={loadBrandPreset}
+                  className="text-xs bg-violet-900/40 hover:bg-violet-900/60 border border-violet-700/50 text-violet-300 px-3 py-1.5 rounded-lg transition">
+                  📂 Load Saved Preset
+                </button>
+              )}
+              <span className="text-xs text-gray-600">Saves font style, size, genre & author name for your series.</span>
             </div>
 
             <div className="flex gap-3 pt-2">

@@ -41,7 +41,7 @@ export async function generateKDPPdf(input: ExportInput): Promise<ExportResult> 
   const pdfDoc = await PDFDocument.create()
   pdfDoc.setTitle(cleanText(`${input.title} — KDP Cover`))
   pdfDoc.setAuthor(cleanText(input.authorName))
-  pdfDoc.setCreator('KDP Cover AI')
+  if (!input.isAgencyPlan) pdfDoc.setCreator('KDP Cover AI')
 
   const page = pdfDoc.addPage([pageWidthPt, pageHeightPt])
 

@@ -49,8 +49,9 @@ export default function BlogPage() {
 
         <div className="space-y-6">
           {POSTS.map(post => (
-            <article key={post.slug}
-              className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition group">
+            <Link key={post.slug} href={`/blog/${post.slug}`}>
+            <article
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-violet-700/50 transition group cursor-pointer">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-900/50 text-violet-300">
                   {post.tag}
@@ -63,10 +64,11 @@ export default function BlogPage() {
               <p className="text-gray-400 text-sm leading-relaxed mb-4">
                 {post.excerpt}
               </p>
-              <span className="text-sm text-violet-400 font-medium">
-                Coming soon →
-              </span>
+              <Link href={`/blog/${post.slug}`} className="text-sm text-violet-400 hover:text-violet-300 font-medium transition">
+                Read article →
+              </Link>
             </article>
+            </Link>
           ))}
         </div>
 
