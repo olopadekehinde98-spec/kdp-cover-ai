@@ -100,7 +100,7 @@ export default function RefundPage() {
                 {[
                   { step: 'You email us', time: 'Any time within 7 days' },
                   { step: 'We confirm', time: '1–2 business days' },
-                  { step: 'Lemon Squeezy issues refund', time: '3–5 business days' },
+                  { step: 'Paddle issues refund', time: '3–5 business days' },
                   { step: 'Credit appears on your statement', time: '5–10 business days (bank dependent)' },
                 ].map(r => (
                   <div key={r.step}>

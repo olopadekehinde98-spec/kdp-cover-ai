@@ -96,7 +96,7 @@ const SECTIONS = [
       },
       {
         q: 'How do I upgrade my plan?',
-        a: 'Go to the Pricing page and click the plan you want. You will be taken to a secure Lemon Squeezy checkout. Your plan upgrades instantly after payment.',
+        a: 'Go to the Pricing page and click the plan you want. You will be taken to a secure Paddle checkout. Your plan upgrades instantly after payment.',
       },
       {
         q: 'Can I cancel anytime?',
@@ -108,7 +108,7 @@ const SECTIONS = [
       },
       {
         q: 'What payment methods are accepted?',
-        a: 'All major credit/debit cards, PayPal, and many local payment methods via Lemon Squeezy. We never see your raw card data.',
+        a: 'All major credit/debit cards and many local payment methods via Paddle. Payments are accepted in 200+ currencies. We never see your raw card data.',
       },
     ],
   },

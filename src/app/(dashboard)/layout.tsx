@@ -72,6 +72,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   { href: '/affiliate', label: 'Affiliates' },
                   { href: '/blog',      label: 'Blog' },
                   { href: '/help',      label: 'Help Center' },
+                  { href: '/support',   label: 'Support' },
                 ].map(l => (
                   <li key={l.href}>
                     <Link href={l.href} className="text-gray-500 hover:text-white text-sm transition">{l.label}</Link>
