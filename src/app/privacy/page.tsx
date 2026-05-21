@@ -37,7 +37,7 @@ export default function PrivacyPage() {
               <li>Email address and name (required to create an account)</li>
               <li>Book details you enter (title, genre, description, author name)</li>
               <li>Custom prompts and image generation inputs</li>
-              <li>Payment information (processed by Lemon Squeezy — we never see raw card data)</li>
+              <li>Payment information (processed by Paddle — we never see raw card data)</li>
               <li>Support messages you send us</li>
             </ul>
             <SubTitle>Information collected automatically:</SubTitle>
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
             <div className="mt-4 space-y-3">
               {[
                 { name: 'Clerk', purpose: 'Authentication & user management', link: 'https://clerk.com/privacy' },
-                { name: 'Lemon Squeezy', purpose: 'Payment processing & subscription billing', link: 'https://www.lemonsqueezy.com/privacy' },
+                { name: 'Paddle', purpose: 'Payment processing & subscription billing', link: 'https://www.paddle.com/legal/privacy' },
                 { name: 'OpenAI', purpose: 'AI back cover description generation', link: 'https://openai.com/privacy' },
                 { name: 'Pollinations AI', purpose: 'Cover image generation', link: 'https://pollinations.ai' },
                 { name: 'Neon / PostgreSQL', purpose: 'Database hosting', link: 'https://neon.tech/privacy' },

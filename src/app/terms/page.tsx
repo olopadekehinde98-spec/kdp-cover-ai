@@ -72,7 +72,7 @@ export default function TermsPage() {
 
           <Section title="6. Subscriptions & Billing">
             <ul className="list-disc list-inside space-y-2 text-gray-400">
-              <li>Subscriptions are billed monthly in advance via Lemon Squeezy</li>
+              <li>Subscriptions are billed monthly in advance via Paddle</li>
               <li>Prices are shown in USD and include applicable taxes where required</li>
               <li>You may cancel at any time — access continues until the end of your billing period</li>
               <li>We reserve the right to change pricing with 30 days notice</li>

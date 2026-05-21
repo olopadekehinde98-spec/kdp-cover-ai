@@ -44,6 +44,7 @@ const FOOTER_LINKS = {
     { href: '/pricing',   label: 'Pricing' },
     { href: '/affiliate', label: 'Affiliates' },
     { href: '/help',      label: 'Help Center' },
+    { href: '/support',   label: 'Support' },
   ],
   Company: [
     { href: '/about',     label: 'About' },
