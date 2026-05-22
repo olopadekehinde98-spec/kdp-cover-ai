@@ -52,8 +52,9 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  covers        Cover[]
-  sessions      UserSession[]
+  covers             Cover[]
+  sessions           UserSession[]
+  paymentSubmissions PaymentSubmission[]
 
   @@index([clerkId])
   @@index([email])
@@ -171,4 +172,34 @@ enum TicketStatus {
   IN_PROGRESS
   RESOLVED
   CLOSED
+}
+
+model PaymentSubmission {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount        Float
+  currency      String           // 'USD' | 'NGN'
+  bankUsed      String           // 'Grey Dollar (Lead Bank)' | 'OPay Naira'
+  receiptBase64 String           @db.Text
+  receiptMime   String           // 'image/jpeg' | 'image/png'
+  note          String?          @db.Text
+
+  detectedPlan  String           // plan auto-detected from amount
+  status        SubmissionStatus @default(PENDING)
+  planAssigned  String?          // plan actually granted after approval
+  adminNote     String?
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

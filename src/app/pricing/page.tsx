@@ -205,6 +205,47 @@ export default function PricingPage() {
           </table>
         </div>
 
+        {/* Bank Transfer Payment */}
+        <div className="max-w-3xl mx-auto mb-16">
+          <div className="bg-gray-900 border border-amber-700/50 rounded-2xl p-8">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">🏦</span>
+              <h2 className="text-xl font-bold text-white">Pay by Bank Transfer</h2>
+            </div>
+            <p className="text-gray-400 text-sm mb-6">
+              Prefer to pay directly? Transfer to one of the accounts below, then submit your receipt and your plan will be upgraded.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                <div className="text-xs text-blue-400 font-semibold mb-2">🇺🇸 Dollar Account (USD)</div>
+                <div className="text-2xl font-mono font-bold text-white tracking-wider mb-1">216113472865</div>
+                <div className="text-gray-300 text-sm">Samuel Olopade Kehinde</div>
+                <div className="text-gray-500 text-xs mt-1">Lead Bank (via Grey)</div>
+              </div>
+              <div className="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                <div className="text-xs text-green-400 font-semibold mb-2">🇳🇬 Naira Account (NGN)</div>
+                <div className="text-2xl font-mono font-bold text-white tracking-wider mb-1">7041389971</div>
+                <div className="text-gray-300 text-sm">Olopade Samuel Kehinde</div>
+                <div className="text-gray-500 text-xs mt-1">OPay</div>
+              </div>
+            </div>
+            <div className="bg-gray-800 rounded-xl p-4 mb-6">
+              <div className="text-xs text-gray-400 mb-3 font-semibold">Amount to Transfer</div>
+              <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                <div><div className="text-white font-bold">STARTER</div><div className="text-gray-400">$9 · ₦14,000</div></div>
+                <div><div className="text-violet-400 font-bold">PRO</div><div className="text-gray-400">$29 · ₦45,000</div></div>
+                <div><div className="text-amber-400 font-bold">AGENCY</div><div className="text-gray-400">$79 · ₦122,000</div></div>
+              </div>
+            </div>
+            <Link
+              href="/payment-proof"
+              className="block w-full text-center bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-semibold transition"
+            >
+              📎 Submit Payment Receipt
+            </Link>
+          </div>
+        </div>
+
         {/* FAQ */}
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
