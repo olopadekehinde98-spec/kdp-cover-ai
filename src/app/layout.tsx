@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     images: ['https://kdp-cover-ai.vercel.app/og-image.png'],
   },
   verification: {
-    google: 'GOOGLE_VERIFICATION_CODE', // placeholder — replace with your actual code from Google Search Console
+    google: 'IR52tLpsd3lFVxtID9pJXhHB4v0Kd8qFoPxuWhWQ_I4',
   },
 }
 
