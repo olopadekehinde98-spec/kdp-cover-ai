@@ -91,7 +91,7 @@ export default function RatingModal({ coverId, onClose }: RatingModalProps) {
               Your feedback helps us improve KDP Cover AI.
             </p>
             <a
-              href="https://g.page/r/kdpcoverai/review"
+              href="https://search.google.com/local/writereview?placeid=kdpcoverai"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition mb-3"

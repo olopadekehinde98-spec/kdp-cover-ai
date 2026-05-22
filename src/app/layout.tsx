@@ -38,6 +38,9 @@ export const metadata: Metadata = {
     description: 'Generate professional full-wrap Amazon KDP book covers with AI in seconds. Front cover, spine & back — exact 300 DPI dimensions, ready to upload. Free to start.',
     images: ['https://kdp-cover-ai.vercel.app/og-image.png'],
   },
+  verification: {
+    google: 'GOOGLE_VERIFICATION_CODE', // placeholder — replace with your actual code from Google Search Console
+  },
 }
 
 const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY

@@ -8,10 +8,11 @@ interface Props {
 }
 
 const EXPORT_FORMATS = [
-  { format: 'pdf',   label: 'Full PDF',     icon: '📄' },
-  { format: 'front', label: 'Front',        icon: '🖼️' },
-  { format: 'back',  label: 'Back',         icon: '🔖' },
-  { format: 'spine', label: 'Spine',        icon: '📚' },
+  { format: 'pdf',   label: 'Full PDF',     icon: '📄', ext: 'pdf' },
+  { format: 'front', label: 'Front Cover',  icon: '🖼️', ext: 'png' },
+  { format: 'back',  label: 'Back Cover',   icon: '📖', ext: 'png' },
+  { format: 'spine', label: 'Spine',        icon: '📏', ext: 'png' },
+  { format: 'png',   label: 'Full PNG',     icon: '🖼️', ext: 'png' },
 ] as const
 
 export default function HistoryExportButtons({ coverId, title }: Props) {
@@ -35,8 +36,9 @@ export default function HistoryExportButtons({ coverId, title }: Props) {
       const a = document.createElement('a')
       a.href = url
       const safeName = title.replace(/[^a-z0-9]/gi, '-').toLowerCase()
-      const ext = format === 'pdf' ? 'pdf' : 'png'
-      a.download = format === 'pdf' ? `${safeName}-kdp-cover.pdf` : `${safeName}-${format}-cover.${ext}`
+      const fmtInfo = EXPORT_FORMATS.find(f => f.format === format)
+      const ext = fmtInfo?.ext ?? (format === 'pdf' ? 'pdf' : 'png')
+      a.download = `${safeName}-${format}.${ext}`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -48,14 +50,14 @@ export default function HistoryExportButtons({ coverId, title }: Props) {
 
   return (
     <div className="mt-2">
-      <p className="text-xs text-gray-600 mb-1">Download separate</p>
-      <div className="grid grid-cols-2 gap-1">
+      <p className="text-xs text-gray-600 mb-1">Download separate parts</p>
+      <div className="flex flex-wrap gap-1.5">
         {EXPORT_FORMATS.map(({ format, label, icon }) => (
           <button
             key={format}
             onClick={() => handleExport(format)}
             disabled={!!exporting}
-            className="flex items-center gap-1 text-xs bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-400 hover:text-white border border-gray-700 rounded-lg px-2 py-1.5 transition"
+            className="flex items-center gap-1 text-xs bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-400 hover:text-white border border-gray-700 rounded-lg px-2.5 py-1.5 transition"
           >
             {exporting === format ? (
               <span className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />

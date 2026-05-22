@@ -4,20 +4,27 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import DashboardNav from '@/components/DashboardNav'
 import SupportChatBot from '@/components/SupportChatBot'
+import IpTracker from '@/components/IpTracker'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
   const [user, clerkUser] = await Promise.all([
-    prisma.user.findUnique({ where: { clerkId: userId }, select: { plan: true, email: true } }),
+    prisma.user.findUnique({ where: { clerkId: userId }, select: { plan: true, email: true, isBanned: true } }),
     currentUser(),
   ])
 
   if (!user) redirect('/sign-in')
 
+  // Redirect banned users — but not if they're already on the banned page
+  if (user.isBanned) redirect('/banned')
+
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
+
+      {/* ── IP Tracker ─────────────────────────────────── */}
+      <IpTracker />
 
       {/* ── Shared top nav ─────────────────────────────── */}
       <DashboardNav

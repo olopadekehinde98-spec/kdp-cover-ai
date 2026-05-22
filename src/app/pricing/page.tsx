@@ -59,9 +59,17 @@ const PLANS = [
   },
 ]
 
+const NGN_RATE = 1370
+const NGN_PRICES: Record<string, number> = {
+  STARTER: 12330,
+  PRO: 39730,
+  AGENCY: 108230,
+}
+
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
+  const [provider, setProvider] = useState<'flutterwave' | 'paddle'>('flutterwave')
 
   async function handleSubscribe(plan: string) {
     setLoading(plan)
@@ -69,7 +77,7 @@ export default function PricingPage() {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, provider }),
       })
       const data = await res.json()
       if (data.url) {
@@ -91,7 +99,7 @@ export default function PricingPage() {
       <SiteHeader />
       <div className="flex-1 max-w-5xl mx-auto px-6 py-20 w-full">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Simple, Transparent Pricing
           </h1>
@@ -99,6 +107,37 @@ export default function PricingPage() {
             Start free with 3 covers. Upgrade when you&apos;re ready. Cancel anytime.
           </p>
         </div>
+
+        {/* Payment method toggle */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-2xl p-1.5">
+            <button
+              onClick={() => setProvider('flutterwave')}
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
+                provider === 'flutterwave'
+                  ? 'bg-green-700 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              🇳🇬 Pay with Flutterwave (NGN)
+            </button>
+            <button
+              onClick={() => setProvider('paddle')}
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
+                provider === 'paddle'
+                  ? 'bg-blue-700 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              🌍 Pay with Card (USD)
+            </button>
+          </div>
+        </div>
+        {provider === 'flutterwave' && (
+          <p className="text-center text-xs text-gray-500 mb-8">
+            Prices shown in USD · NGN equivalent at ₦{NGN_RATE.toLocaleString()}/$1 shown below each plan
+          </p>
+        )}
 
         {/* Plans */}
         <div className="grid md:grid-cols-3 gap-6 mb-10">
@@ -127,6 +166,11 @@ export default function PricingPage() {
               <div className="mb-6">
                 <span className="text-4xl font-bold text-white">${plan.price}</span>
                 <span className="text-gray-500 text-sm">/month</span>
+                {provider === 'flutterwave' && (
+                  <div className="text-green-400 text-sm font-medium mt-1">
+                    ≈ ₦{NGN_PRICES[plan.key].toLocaleString()} / month
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-3 mb-8 flex-1">

@@ -84,16 +84,16 @@ export default function AffiliatePage() {
           </div>
           <div className="flex flex-col gap-2 shrink-0">
             <a
-              href="/affiliate/dashboard"
+              href="/sign-up?next=/affiliate-dashboard"
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl transition text-center whitespace-nowrap"
             >
-              Join as Affiliate →
+              Join Now →
             </a>
             <a
-              href="#commission-table"
+              href="/affiliate-dashboard"
               className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-6 py-2.5 rounded-xl transition text-center text-sm"
             >
-              See Commission Rates
+              View Dashboard
             </a>
           </div>
         </div>

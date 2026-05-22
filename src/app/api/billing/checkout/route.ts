@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
-import { createCheckoutUrl, type PlanKey } from '@/lib/paddle/client'
+import { type PlanKey as PaddlePlanKey } from '@/lib/paddle/client'
 
 const schema = z.object({
   plan: z.enum(['STARTER', 'PRO', 'AGENCY']),
+  provider: z.enum(['paddle', 'flutterwave']).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -19,9 +20,18 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
+  const { plan, provider = 'flutterwave' } = parsed.data
+
   try {
-    const url = await createCheckoutUrl(parsed.data.plan as PlanKey, user.email, user.id)
-    return NextResponse.json({ url })
+    if (provider === 'flutterwave') {
+      const { createCheckoutUrl } = await import('@/lib/flutterwave/client')
+      const url = await createCheckoutUrl(plan, user.email, user.id, user.name ?? user.email)
+      return NextResponse.json({ url })
+    } else {
+      const { createCheckoutUrl } = await import('@/lib/paddle/client')
+      const url = await createCheckoutUrl(plan as PaddlePlanKey, user.email, user.id)
+      return NextResponse.json({ url })
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Checkout error:', msg)
