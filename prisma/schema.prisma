@@ -49,12 +49,16 @@ model User {
   generationsLimit     Int      @default(3)
   isBanned             Boolean  @default(false)
   isAdmin              Boolean  @default(false)
+  ipAddress            String?
+  lastSeenAt           DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   covers             Cover[]
   sessions           UserSession[]
   paymentSubmissions PaymentSubmission[]
+  affiliateProfile   AffiliateProfile?
+  siteRatings        SiteRating[]
 
   @@index([clerkId])
   @@index([email])
@@ -150,6 +154,94 @@ model SupportTicket {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  messages    SupportMessage[]
+
+  @@index([status])
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender    String        // 'user' | 'ai' | 'admin'
+  content   String        @db.Text
+  createdAt DateTime      @default(now())
+
+  @@index([ticketId])
+}
+
+model SiteRating {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverId   String?
+  rating    Int      // 1-5
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model IpFraudLog {
+  id         String   @id @default(cuid())
+  ipAddress  String
+  userIds    String[]
+  emails     String[]
+  isBanned   Boolean  @default(false)
+  detectedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([ipAddress])
+  @@index([isBanned])
+}
+
+model AffiliateProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referralCode    String   @unique
+  totalReferrals  Int      @default(0)
+  activeReferrals Int      @default(0)
+  totalEarnedUsd  Float    @default(0)
+  totalPaidUsd    Float    @default(0)
+  bankName        String?
+  accountNumber   String?
+  accountName     String?
+  isActive        Boolean  @default(true)
+  joinedAt        DateTime @default(now())
+
+  commissions AffiliateCommission[]
+  payouts     AffiliatePayout[]
+
+  @@index([referralCode])
+}
+
+model AffiliateCommission {
+  id             String           @id @default(cuid())
+  affiliateId    String
+  affiliate      AffiliateProfile @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredUserId String
+  plan           String
+  amountUsd      Float
+  percentage     Float
+  isPaid         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+
+  @@index([affiliateId])
+}
+
+model AffiliatePayout {
+  id          String           @id @default(cuid())
+  affiliateId String
+  affiliate   AffiliateProfile @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  amountUsd   Float
+  amountNgn   Float
+  status      String           @default("PENDING") // PENDING | PAID | REJECTED
+  adminNote   String?
+  requestedAt DateTime         @default(now())
+  paidAt      DateTime?
+
+  @@index([affiliateId])
   @@index([status])
 }
 

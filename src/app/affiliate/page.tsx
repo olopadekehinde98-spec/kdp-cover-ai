@@ -60,6 +60,45 @@ export default function AffiliatePage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <SiteHeader />
 
+      {/* Affiliate Recruitment Banner */}
+      <section className="max-w-5xl mx-auto px-6 pt-10">
+        <div className="bg-gradient-to-r from-amber-950/60 to-orange-950/60 border border-amber-700/50 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-5">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-amber-600/30 text-amber-300 text-xs font-bold px-3 py-1 rounded-full mb-3">
+              We are looking for affiliates!
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2">
+              Join Our Affiliate Program — Earn Up to 30%
+            </h2>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <span className="flex items-center gap-1.5 text-gray-300">
+                <span className="text-green-400">✓</span> Anyone can join — free to start
+              </span>
+              <span className="flex items-center gap-1.5 text-gray-300">
+                <span className="text-green-400">✓</span> Paid users earn full rates
+              </span>
+              <span className="flex items-center gap-1.5 text-gray-300">
+                <span className="text-green-400">✓</span> Paid in USD and NGN (₦1,370/$1)
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 shrink-0">
+            <a
+              href="/affiliate/dashboard"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl transition text-center whitespace-nowrap"
+            >
+              Join as Affiliate →
+            </a>
+            <a
+              href="#commission-table"
+              className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-6 py-2.5 rounded-xl transition text-center text-sm"
+            >
+              See Commission Rates
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-6 pt-20 pb-14 text-center">
         <div className="inline-flex items-center gap-2 bg-amber-950/60 border border-amber-700/50 text-amber-300 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
@@ -95,7 +134,7 @@ export default function AffiliatePage() {
       </section>
 
       {/* Full Commission Matrix */}
-      <section className="max-w-5xl mx-auto px-6 py-10">
+      <section id="commission-table" className="max-w-5xl mx-auto px-6 py-10">
         <h2 className="text-3xl font-bold text-white text-center mb-3">Full Commission Table</h2>
         <p className="text-gray-400 text-center text-sm mb-8">
           Your tier is based on <em>total active paying referrals</em>. Each plan has its own commission rate.

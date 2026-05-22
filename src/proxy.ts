@@ -2,6 +2,14 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest, NextFetchEvent } from 'next/server'
 
+function extractIp(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    '127.0.0.1'
+  )
+}
+
 const isPublicRoute = createRouteMatcher([
   '/',
   '/pricing',
@@ -26,16 +34,31 @@ try {
 
 // Named export (proxy) — Next.js 16 convention
 export async function proxy(req: NextRequest, event: NextFetchEvent) {
+  const ip = extractIp(req)
+
   // No Clerk keys configured → let everything through
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !clerkHandler) {
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('x-client-ip', ip)
+    return res
   }
 
   try {
-    return await clerkHandler(req, event)
+    const res = await clerkHandler(req, event)
+    if (res) {
+      // Attach IP header to the response
+      const newRes = new NextResponse(res.body, res)
+      newRes.headers.set('x-client-ip', ip)
+      return newRes
+    }
+    const fallback = NextResponse.next()
+    fallback.headers.set('x-client-ip', ip)
+    return fallback
   } catch {
     // Clerk crashed on this request (e.g. misconfigured key) → don't 500 the whole site
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('x-client-ip', ip)
+    return res
   }
 }
 

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import Link from 'next/link'
 import HistoryDownload from '@/components/HistoryDownload'
+import HistoryExportButtons from '@/components/HistoryExportButtons'
 
 export default async function HistoryPage() {
   const { userId } = await auth()
@@ -80,6 +81,9 @@ export default async function HistoryPage() {
                         <HistoryDownload key={i} url={ex.url} format={ex.format} title={cover.title} />
                       ))}
                     </div>
+                  )}
+                  {cover.status === 'COMPLETED' && cover.imageUrl && (
+                    <HistoryExportButtons coverId={cover.id} title={cover.title} />
                   )}
                 </div>
               </div>

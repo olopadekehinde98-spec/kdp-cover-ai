@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: '/pricing',   label: 'Pricing' },
   { href: '/affiliate', label: 'Affiliates' },
   { href: '/help',      label: 'Help' },
+  { href: '/about',     label: 'About' },
 ]
 
 export default function SiteHeader() {
@@ -18,9 +19,8 @@ export default function SiteHeader() {
     <header className="border-b border-gray-900 bg-gray-950/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center font-black text-sm text-white">K</div>
-          <span className="font-bold text-lg text-white tracking-tight">KDP Cover AI</span>
+        <Link href="/" className="flex-shrink-0">
+          <img src="/logo.svg" alt="KDP Cover AI" className="h-10 w-auto" />
         </Link>
 
         {/* Desktop nav */}

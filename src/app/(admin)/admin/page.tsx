@@ -36,12 +36,15 @@ export default async function AdminDashboard() {
             <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">A</div>
             <span className="font-semibold text-white text-sm">Admin Panel</span>
           </div>
-          <div className="flex gap-4 text-sm">
+          <div className="flex gap-4 text-sm flex-wrap">
             <Link href="/admin" className="text-white font-medium">Dashboard</Link>
             <Link href="/admin/users" className="text-gray-400 hover:text-white">Users</Link>
             <Link href="/admin/covers" className="text-gray-400 hover:text-white">Covers</Link>
             <Link href="/admin/financials" className="text-gray-400 hover:text-white">Financials</Link>
             <Link href="/admin/payments" className="text-gray-400 hover:text-white">Payments</Link>
+            <Link href="/admin/support" className="text-gray-400 hover:text-white">Support</Link>
+            <Link href="/admin/fraud" className="text-gray-400 hover:text-white">Fraud</Link>
+            <Link href="/admin/affiliates" className="text-gray-400 hover:text-white">Affiliates</Link>
           </div>
         </div>
         <Link href="/dashboard" className="text-xs text-gray-500 hover:text-gray-300">← Back to app</Link>

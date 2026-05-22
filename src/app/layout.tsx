@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import Script from 'next/script'
+import SupportChatBot from '@/components/SupportChatBot'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${inter.className} bg-gray-950 text-white antialiased min-h-screen`}>
         {children}
+        <SupportChatBot />
         {gaId && (
           <>
             <Script

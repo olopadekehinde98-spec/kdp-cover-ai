@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import DashboardNav from '@/components/DashboardNav'
+import SupportChatBot from '@/components/SupportChatBot'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth()
@@ -29,6 +30,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <main className="flex-1">
         {children}
       </main>
+
+      {/* ── Support chat ───────────────────────────────── */}
+      <SupportChatBot />
 
       {/* ── Shared footer ──────────────────────────────── */}
       <footer className="border-t border-gray-800 bg-gray-950 mt-16">

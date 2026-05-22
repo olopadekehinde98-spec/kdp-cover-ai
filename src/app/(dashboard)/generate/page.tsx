@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import RatingModal from '@/components/RatingModal'
 
 const GENRES = [
   { value: 'thriller', label: 'Thriller', emoji: '🔪' },
@@ -289,6 +290,10 @@ function GeneratePage() {
       try { data = await res.json() } catch { throw new Error('Generation timed out. Please try again.') }
       if (!res.ok) throw new Error(data?.error || 'Generation failed.')
       setResult(data); setStep(99)
+      if (data?.coverId) {
+        setRatingCoverId(data.coverId)
+        setTimeout(() => setShowRatingModal(true), 4000)
+      }
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
   }
@@ -314,6 +319,10 @@ function GeneratePage() {
       try { data = await res.json() } catch { throw new Error('Upload timed out. Please try again.') }
       if (!res.ok) throw new Error(data?.error || 'Upload failed.')
       setResult(data); setStep(99)
+      if (data?.coverId) {
+        setRatingCoverId(data.coverId)
+        setTimeout(() => setShowRatingModal(true), 4000)
+      }
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
   }
@@ -322,6 +331,8 @@ function GeneratePage() {
   const [aiDescLoading, setAiDescLoading] = useState(false)
   const [aiDescError, setAiDescError] = useState('')
   const [brandSaved, setBrandSaved] = useState(false)
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [ratingCoverId, setRatingCoverId] = useState('')
 
   async function handleAIDescription() {
     if (!form.title || !form.genre) { setAiDescError('Enter a title and genre first.'); return }
@@ -1027,6 +1038,9 @@ function GeneratePage() {
   function renderResult() {
     return (
       <div className="space-y-5">
+        {showRatingModal && ratingCoverId && (
+          <RatingModal coverId={ratingCoverId} onClose={() => setShowRatingModal(false)} />
+        )}
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
           <h2 className="text-xl font-semibold text-white mb-4">Your KDP Cover is Ready!</h2>
 
@@ -1113,6 +1127,14 @@ function GeneratePage() {
               Dashboard
             </button>
           </div>
+          <a
+            href="https://g.page/r/kdpcoverai/review"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 w-full flex items-center justify-center gap-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-700/50 text-amber-300 font-semibold py-2.5 rounded-xl transition text-sm"
+          >
+            ⭐ Rate Us on Google
+          </a>
         </div>
       </div>
     )

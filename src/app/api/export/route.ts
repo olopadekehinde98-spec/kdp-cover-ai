@@ -12,7 +12,7 @@ import type { KDPInput } from '@/lib/kdp-engine/types'
 
 const schema = z.object({
   coverId: z.string(),
-  format: z.enum(['pdf', 'png', 'jpg']).optional().default('pdf'),
+  format: z.enum(['pdf', 'png', 'jpg', 'front', 'back', 'spine']).optional().default('pdf'),
   titleFontScale: z.number().min(0.5).max(1.6).optional(),
   titleStyle: z.enum(['bold-sans', 'serif', 'serif-italic', 'sans-oblique', 'courier-bold', 'serif-light']).optional(),
   isbn: z.string().max(30).optional(),
@@ -94,8 +94,8 @@ export async function POST(req: NextRequest) {
     const result = await generateKDPPdf(exportInput)
     const safeName = encodeURIComponent(cover.title.replace(/[^a-z0-9]/gi, '-').toLowerCase())
 
-    // ---- PNG / JPG export — front-cover portrait crop only (no text, no barcode) ----
-    if (format === 'png' || format === 'jpg') {
+    // ---- PNG / JPG / front / back / spine image exports ----
+    if (format === 'png' || format === 'jpg' || format === 'front' || format === 'back' || format === 'spine') {
       const sharp = (await import('sharp')).default
 
       // Fetch / decode the full-wrap AI image
@@ -115,37 +115,58 @@ export async function POST(req: NextRequest) {
       const imgW = meta.width ?? dims.totalWidthPx
       const imgH = meta.height ?? dims.totalHeightPx
 
-      // Calculate front-cover crop rectangle proportionally
-      // frontCoverStartX and trimWidth are in inches; scale to actual image pixels
-      const scaleX = imgW / dims.totalWidth
-      const cropLeft  = Math.round(dims.frontCoverStartX * scaleX)
-      const cropWidth = Math.min(Math.round(dims.trimWidth * scaleX), imgW - cropLeft)
+      let cropLeft: number, cropWidth: number, outW: number, outH: number, fileName: string
 
-      // Resize the crop to the correct 300-DPI output size
-      const outW = Math.round(dims.trimWidth  * dims.ppi)
-      const outH = Math.round(dims.trimHeight * dims.ppi)
+      if (format === 'back') {
+        // Back cover: left bleed to spineStartX
+        cropLeft = 0
+        cropWidth = Math.round((dims.bleed + dims.trimWidth) / dims.totalWidth * imgW)
+        outW = Math.round(dims.trimWidth * 300)
+        outH = Math.round(dims.trimHeight * 300)
+        fileName = `${safeName}-back-cover.png`
+      } else if (format === 'spine') {
+        // Spine: spineStartX to frontCoverStartX
+        cropLeft = Math.round(dims.spineStartX / dims.totalWidth * imgW)
+        cropWidth = Math.round(dims.spineWidth / dims.totalWidth * imgW)
+        outW = Math.round(dims.spineWidth * 300)
+        outH = Math.round(dims.trimHeight * 300)
+        fileName = `${safeName}-spine.png`
+      } else {
+        // front / png / jpg — front cover
+        cropLeft = Math.round(dims.frontCoverStartX / dims.totalWidth * imgW)
+        cropWidth = Math.round(dims.trimWidth / dims.totalWidth * imgW)
+        outW = Math.round(dims.trimWidth * 300)
+        outH = Math.round(dims.trimHeight * 300)
+        fileName = format === 'jpg' ? `${safeName}-front-cover.jpg` : `${safeName}-front-cover.png`
+      }
+
+      // Clamp to image bounds
+      cropWidth = Math.min(cropWidth, imgW - cropLeft)
+      cropWidth = Math.max(cropWidth, 1)
+      outW = Math.max(outW, 1)
+      outH = Math.max(outH, 1)
 
       let croppedBuffer: Buffer
-      if (format === 'png') {
-        croppedBuffer = await sharp(imgBuffer)
-          .extract({ left: cropLeft, top: 0, width: cropWidth, height: imgH })
-          .resize(outW, outH, { fit: 'fill' })
-          .png({ compressionLevel: 8 })
-          .toBuffer()
-      } else {
+      if (format === 'jpg') {
         croppedBuffer = await sharp(imgBuffer)
           .extract({ left: cropLeft, top: 0, width: cropWidth, height: imgH })
           .resize(outW, outH, { fit: 'fill' })
           .jpeg({ quality: 95 })
           .toBuffer()
+      } else {
+        croppedBuffer = await sharp(imgBuffer)
+          .extract({ left: cropLeft, top: 0, width: cropWidth, height: imgH })
+          .resize(outW, outH, { fit: 'fill' })
+          .png({ compressionLevel: 8 })
+          .toBuffer()
       }
 
-      const mimeType = format === 'png' ? 'image/png' : 'image/jpeg'
+      const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png'
       return new NextResponse(new Uint8Array(croppedBuffer), {
         status: 200,
         headers: {
           'Content-Type': mimeType,
-          'Content-Disposition': `attachment; filename="${safeName}-front-cover.${format}"`,
+          'Content-Disposition': `attachment; filename="${fileName}"`,
           'Content-Length': croppedBuffer.length.toString(),
         },
       })
