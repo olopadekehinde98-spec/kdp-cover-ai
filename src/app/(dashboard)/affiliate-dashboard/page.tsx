@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { EXCHANGE_RATE, getCommissionRate, getTierLabel, getNextTierThreshold, usdToNgn } from '@/lib/affiliate'
+import { getCommissionAmount, getTierLabel, getNextTierThreshold, getTierEarning, usdToNgn } from '@/lib/affiliate'
 
-const PLAN_PRICES: Record<string, number> = { starter: 9, pro: 29, agency: 79 }
+const TIER_EARN_PAID:   Record<string, number> = { L1: 3, L2: 5, L3: 10, L4: 15 }
+const TIER_EARN_FREE:   Record<string, number> = { L1: 1.5, L2: 2.5, L3: 5, L4: 7.5 }
 
 type Profile = {
   id: string
@@ -136,14 +137,15 @@ export default function AffiliateDashboard() {
           <div className="text-5xl mb-4">💰</div>
           <h1 className="text-3xl font-black text-white mb-3">Join the Affiliate Program</h1>
           <p className="text-gray-400 mb-6">
-            Earn up to 30% recurring commission for every paying user you refer.
-            Paid monthly in USD (or NGN at ₦1,370/$1).
+            Earn a flat dollar amount for every paying user you refer — no confusing percentages.
+            Start at $3/referral and grow to $15/referral as your network scales.
+            Paid in USD or NGN (₦1,370/$1).
           </p>
 
           <div className="grid grid-cols-3 gap-3 mb-8 text-sm">
             {[
-              { label: 'Commission', value: 'Up to 30%' },
-              { label: 'Payout', value: 'Monthly' },
+              { label: 'Commission', value: '$3 – $15' },
+              { label: 'Payout', value: 'On Request' },
               { label: 'Minimum', value: '$10' },
             ].map(item => (
               <div key={item.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -258,36 +260,58 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* Commission rate table */}
+        {/* Commission tier table */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-6">
           <div className="px-5 py-4 border-b border-gray-800">
-            <p className="text-sm font-semibold text-white">Your Commission Rates ({tier})</p>
-            <p className="text-xs text-gray-500 mt-0.5">{isPaidUser ? 'Paid user rates (full)' : 'Free user rates (50% of standard)'}</p>
+            <p className="text-sm font-semibold text-white">Your Earnings Per Referral ({tier})</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {isPaidUser
+                ? 'Paid affiliate — full rate applies'
+                : 'Free affiliate — 50% rate. Upgrade to any paid plan to earn 2× more.'}
+            </p>
           </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 text-xs text-gray-500">
-                <th className="text-left px-5 py-3">Plan</th>
-                <th className="text-right px-5 py-3">Price/mo</th>
-                <th className="text-right px-5 py-3">Your Rate</th>
-                <th className="text-right px-5 py-3">Per Referral/mo</th>
+                <th className="text-left px-5 py-3">Tier</th>
+                <th className="text-left px-5 py-3">Active Referrals Needed</th>
+                <th className="text-right px-5 py-3">Paid Affiliate</th>
+                <th className="text-right px-5 py-3">Free Affiliate</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {['starter', 'pro', 'agency'].map(plan => {
-                const rate = getCommissionRate(profile.activeReferrals, plan, isPaidUser)
-                const earn = PLAN_PRICES[plan] * rate
+              {(['L1', 'L2', 'L3', 'L4'] as const).map((t, i) => {
+                const ranges = ['0 – 9', '10 – 19', '20 – 39', '40+']
+                const paidAmt = TIER_EARN_PAID[t]
+                const freeAmt = TIER_EARN_FREE[t]
+                const isActive = tier === t
                 return (
-                  <tr key={plan}>
-                    <td className="px-5 py-3 text-white capitalize font-medium">{plan}</td>
-                    <td className="px-5 py-3 text-right text-gray-400 font-mono">${PLAN_PRICES[plan]}</td>
-                    <td className="px-5 py-3 text-right text-violet-400 font-bold">{(rate * 100).toFixed(0)}%</td>
-                    <td className="px-5 py-3 text-right text-green-400 font-mono">{currency === 'NGN' ? `₦${usdToNgn(earn).toLocaleString()}` : `$${earn.toFixed(2)}`}</td>
+                  <tr key={t} className={isActive ? 'bg-violet-900/20 border-l-2 border-l-violet-500' : ''}>
+                    <td className="px-5 py-3">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-violet-700 text-white' : 'bg-gray-800 text-gray-400'}`}>{t}</span>
+                      {isActive && <span className="text-xs text-violet-400 ml-2">← you</span>}
+                    </td>
+                    <td className="px-5 py-3 text-gray-400 text-xs">{ranges[i]} active referrals</td>
+                    <td className="px-5 py-3 text-right font-bold font-mono text-green-400">
+                      {currency === 'NGN' ? `₦${usdToNgn(paidAmt).toLocaleString()}` : `$${paidAmt}`}
+                    </td>
+                    <td className="px-5 py-3 text-right font-mono text-gray-500">
+                      {currency === 'NGN' ? `₦${usdToNgn(freeAmt).toLocaleString()}` : `$${freeAmt}`}
+                    </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
+          <div className="px-5 py-3 border-t border-gray-800 bg-gray-900/50">
+            <p className="text-xs text-gray-500">
+              Your current rate: <span className="text-white font-bold">
+                {currency === 'NGN'
+                  ? `₦${usdToNgn(getCommissionAmount(profile.activeReferrals, isPaidUser)).toLocaleString()}`
+                  : `$${getCommissionAmount(profile.activeReferrals, isPaidUser)}`}
+              </span> per new paying referral.
+            </p>
+          </div>
         </div>
 
         {/* Payout section */}

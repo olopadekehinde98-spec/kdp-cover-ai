@@ -1,10 +1,12 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import DashboardNav from '@/components/DashboardNav'
 import SupportChatBot from '@/components/SupportChatBot'
 import IpTracker from '@/components/IpTracker'
+import ReferralCapture from '@/components/ReferralCapture'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth()
@@ -23,8 +25,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
 
-      {/* ── IP Tracker ─────────────────────────────────── */}
+      {/* ── IP Tracker + Referral auto-apply ──────────── */}
       <IpTracker />
+      <Suspense fallback={null}>
+        <ReferralCapture applyOnLoad />
+      </Suspense>
 
       {/* ── Shared top nav ─────────────────────────────── */}
       <DashboardNav

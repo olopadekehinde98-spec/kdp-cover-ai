@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="60" height="60" rx="14" fill="url(#b)"/>
+
+  <!-- Open book -->
+  <rect x="9" y="12" width="17" height="30" rx="2" fill="white" opacity="0.92"/>
+  <rect x="30" y="12" width="17" height="30" rx="2" fill="white" opacity="0.75"/>
+  <rect x="26" y="12" width="8" height="30" fill="white" opacity="0.88"/>
+
+  <!-- Page lines -->
+  <rect x="12" y="18" width="11" height="2" rx="1" fill="#7C3AED" opacity="0.6"/>
+  <rect x="12" y="23" width="9" height="2" rx="1" fill="#7C3AED" opacity="0.4"/>
+  <rect x="12" y="28" width="10" height="2" rx="1" fill="#7C3AED" opacity="0.4"/>
+
+  <!-- Sparkle -->
+  <path d="M45 7 L46.4 11.6 L51 13 L46.4 14.4 L45 19 L43.6 14.4 L39 13 L43.6 11.6 Z" fill="white" opacity="0.95"/>
+
+  <!-- "AI" label at bottom -->
+  <text x="30" y="56" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" font-weight="800" letter-spacing="3" fill="white" text-anchor="middle" opacity="0.9">AI</text>
+</svg>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { verifyFlutterwaveWebhook } from '@/lib/flutterwave/client'
-import { getCommissionRate } from '@/lib/affiliate'
+import { getCommissionAmount } from '@/lib/affiliate'
 
 const PLAN_LIMITS: Record<string, number> = {
   STARTER: 15,
@@ -31,9 +31,8 @@ async function creditAffiliateCommission(userId: string, plan: string) {
     if (!affiliate || !affiliate.isActive) return
 
     const isPaidUser = affiliate.user.plan !== 'FREE'
-    const rate = getCommissionRate(affiliate.activeReferrals, plan, isPaidUser)
-    const planPrice = PLAN_PRICES[plan] ?? 0
-    const commissionUsd = parseFloat((planPrice * rate).toFixed(2))
+    const commissionUsd = getCommissionAmount(affiliate.activeReferrals, isPaidUser)
+    const rate = commissionUsd / Math.max(PLAN_PRICES[plan] ?? 9, 1) // stored for reference
 
     await prisma.$transaction([
       prisma.affiliateCommission.create({

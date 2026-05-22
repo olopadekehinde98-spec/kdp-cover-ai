@@ -5,6 +5,24 @@ import OpenAI from 'openai'
 
 const SYSTEM_PROMPT = `You are KDP Cover AI's friendly support assistant. Help users with book cover generation, KDP dimensions, spine width, plan features, and billing. If you cannot solve the issue, tell them to type 'create ticket' to escalate to a human. Keep answers under 100 words.`
 
+/** Static fallback replies when OpenAI key is not configured */
+function staticReply(lastMsg: string): string {
+  const m = lastMsg.toLowerCase()
+  if (m.includes('spine') || m.includes('width'))
+    return 'Spine width formula — B&W: 0.002252 × pages, Color: 0.002500 × pages, Premium Color: 0.002347 × pages. Our generator calculates this automatically. Type "create ticket" if you need help.'
+  if (m.includes('plan') || m.includes('price') || m.includes('cost') || m.includes('upgrade'))
+    return 'Plans: Starter $9/mo (15 covers), Pro $29/mo (unlimited), Agency $79/mo (unlimited + priority). Visit /pricing. Type "create ticket" to talk to us.'
+  if (m.includes('refund') || m.includes('cancel'))
+    return 'Refunds are available within 7 days if you haven\'t used cover generation. See /refund for the full policy, or type "create ticket" to request one.'
+  if (m.includes('download') || m.includes('export') || m.includes('pdf'))
+    return 'After generating, click Export and choose PDF (for KDP upload), PNG, or JPEG. You can also download the front cover, back cover, and spine separately.'
+  if (m.includes('affiliate') || m.includes('referral') || m.includes('earn'))
+    return 'Affiliate program is free to join! Earn $3–$15 per referral. Go to /affiliate-dashboard for your referral link and earnings.'
+  if (m.includes('generate') || m.includes('cover') || m.includes('create'))
+    return 'Go to /generate, enter your book details (title, author, pages, paper type), describe the style you want, then click Generate. Your cover is ready in seconds!'
+  return 'Thanks for reaching out! Type "create ticket" to open a support ticket and our team will get back to you within 24 hours.'
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { messages, createTicket, email: bodyEmail, subject } = body
@@ -46,6 +64,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'messages array required' }, { status: 400 })
   }
 
+  const lastUserMsg = messages.filter((m: { role: string }) => m.role === 'user').at(-1)?.content ?? ''
+
+  // No OpenAI key → return smart static reply
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ reply: staticReply(lastUserMsg) })
+  }
+
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -61,10 +86,12 @@ export async function POST(req: NextRequest) {
       max_tokens: 200,
     })
 
-    const reply = completion.choices[0]?.message?.content || 'I could not generate a response.'
+    const reply = completion.choices[0]?.message?.content || staticReply(lastUserMsg)
     return NextResponse.json({ reply })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: `AI error: ${msg}` }, { status: 500 })
+    console.error('Support chat error:', err instanceof Error ? err.message : err)
+    return NextResponse.json({
+      reply: 'I\'m having trouble right now. Type "create ticket" to reach our support team directly and we\'ll respond within 24 hours.',
+    })
   }
 }
