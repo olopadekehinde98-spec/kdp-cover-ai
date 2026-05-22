@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getCommissionAmount, getCommissionRate, getTierLabel, getNextTierThreshold, usdToNgn, COMMISSION_TABLE, PLAN_PRICES } from '@/lib/affiliate'
+import { getCommissionAmount, getCommissionRate, getTierLabel, getNextTierThreshold, getTierRatePct, usdToNgn, COMMISSION_TABLE, PLAN_PRICES } from '@/lib/affiliate'
 
 const TIERS = ['L1','L2','L3','L4','L5'] as const
 const TIER_RANGES: Record<string, string> = {
   L1: '0–9', L2: '10–19', L3: '20–39', L4: '40–59', L5: '60+'
+}
+const TIER_RATES_DISPLAY: Record<string, string> = {
+  L1: '5%', L2: '8%', L3: '10%', L4: '13%', L5: '15.5%'
 }
 
 type Profile = {
@@ -277,6 +280,7 @@ export default function AffiliateDashboard() {
                 <tr className="border-b border-gray-800 text-xs text-gray-500">
                   <th className="text-left px-4 py-3">Tier</th>
                   <th className="text-left px-4 py-3">Active Refs</th>
+                  <th className="text-center px-4 py-3 text-gray-400">Rate</th>
                   <th className="text-center px-4 py-3 text-blue-400">Starter<br/><span className="text-gray-600 font-normal">$9/mo</span></th>
                   <th className="text-center px-4 py-3 text-violet-400">Pro<br/><span className="text-gray-600 font-normal">$29/mo</span></th>
                   <th className="text-center px-4 py-3 text-amber-400">Agency<br/><span className="text-gray-600 font-normal">$79/mo</span></th>
@@ -297,6 +301,11 @@ export default function AffiliateDashboard() {
                         {t === 'L5' && <span className="text-xs text-amber-500 ml-1.5">max</span>}
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{TIER_RANGES[t]}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-xs font-bold ${isActive ? 'text-white' : t === 'L5' ? 'text-amber-400' : 'text-gray-500'}`}>
+                        {TIER_RATES_DISPLAY[t]}
+                      </span>
+                    </td>
                       {(['STARTER','PRO','AGENCY'] as const).map(plan => {
                         const paidAmt = COMMISSION_TABLE[plan][t]
                         const displayAmt = isPaidUser ? paidAmt : paidAmt * 0.5

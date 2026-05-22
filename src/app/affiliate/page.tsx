@@ -17,17 +17,18 @@ import AffiliateCTA from '@/components/AffiliateCTAWrapper'
  * Free affiliates earn 50% of each rate.
  */
 
+// Equal % for all plans — same rate every tier, amounts scale with plan price
 const TIERS = [
-  { key: 'L1', label: 'Level 1', range: '0 – 9',  bg: 'bg-gray-800 text-gray-400',
-    starter: { pct: 8,  earn: 0.72 }, pro: { pct: 10, earn: 2.90 }, agency: { pct: 5,  earn: 3.95 } },
-  { key: 'L2', label: 'Level 2', range: '10 – 19', bg: 'bg-blue-900/50 text-blue-300',
-    starter: { pct: 12, earn: 1.08 }, pro: { pct: 15, earn: 4.35 }, agency: { pct: 8,  earn: 6.32 } },
-  { key: 'L3', label: 'Level 3', range: '20 – 39', bg: 'bg-violet-900/50 text-violet-300',
-    starter: { pct: 18, earn: 1.62 }, pro: { pct: 22, earn: 6.38 }, agency: { pct: 10, earn: 7.90 } },
-  { key: 'L4', label: 'Level 4', range: '40 – 59', bg: 'bg-violet-900/70 text-violet-200',
-    starter: { pct: 22, earn: 1.98 }, pro: { pct: 27, earn: 7.83 }, agency: { pct: 12, earn: 9.48 } },
-  { key: 'L5', label: 'Level 5', range: '60+',     bg: 'bg-amber-900/50 text-amber-300',
-    starter: { pct: 25, earn: 2.25 }, pro: { pct: 30, earn: 8.70 }, agency: { pct: 15, earn: 11.85 } },
+  { key: 'L1', label: 'Level 1', range: '0 – 9',   pct: 5.0,  bg: 'bg-gray-800 text-gray-400',
+    starter: { earn: 0.45 }, pro: { earn: 1.45 }, agency: { earn: 3.95 } },
+  { key: 'L2', label: 'Level 2', range: '10 – 19', pct: 8.0,  bg: 'bg-blue-900/50 text-blue-300',
+    starter: { earn: 0.72 }, pro: { earn: 2.32 }, agency: { earn: 6.32 } },
+  { key: 'L3', label: 'Level 3', range: '20 – 39', pct: 10.0, bg: 'bg-violet-900/50 text-violet-300',
+    starter: { earn: 0.90 }, pro: { earn: 2.90 }, agency: { earn: 7.90 } },
+  { key: 'L4', label: 'Level 4', range: '40 – 59', pct: 13.0, bg: 'bg-violet-900/70 text-violet-200',
+    starter: { earn: 1.17 }, pro: { earn: 3.77 }, agency: { earn: 10.27 } },
+  { key: 'L5', label: 'Level 5', range: '60+',     pct: 15.5, bg: 'bg-amber-900/50 text-amber-300',
+    starter: { earn: 1.40 }, pro: { earn: 4.50 }, agency: { earn: 12.25 } },
 ]
 
 const HOW = [
@@ -132,7 +133,7 @@ export default function AffiliatePage() {
       <section id="commission-table" className="max-w-5xl mx-auto px-6 py-10">
         <h2 className="text-3xl font-bold text-white text-center mb-3">Full Commission Table</h2>
         <p className="text-gray-400 text-center text-sm mb-8">
-          % of plan price per referral · Tier based on active paying referrals · Max 30% on Pro at 60+ referrals
+          Equal % for all plans — same rate per tier, amounts scale with plan price · Max 15.5% at 60+ referrals
         </p>
 
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-6">
@@ -142,10 +143,10 @@ export default function AffiliatePage() {
                 <tr className="border-b border-gray-700 text-xs">
                   <th className="text-left px-5 py-4 text-gray-400 font-medium">Tier</th>
                   <th className="text-left px-5 py-4 text-gray-400 font-medium">Active Refs</th>
+                  <th className="text-center px-5 py-4 text-gray-400 font-medium">Rate</th>
                   <th className="text-center px-5 py-4 text-blue-400 font-bold">Starter<br/><span className="text-gray-500 font-normal">$9/mo</span></th>
                   <th className="text-center px-5 py-4 text-violet-400 font-bold">Pro<br/><span className="text-gray-500 font-normal">$29/mo</span></th>
                   <th className="text-center px-5 py-4 text-amber-400 font-bold">Agency<br/><span className="text-gray-500 font-normal">$79/mo</span></th>
-                  <th className="text-right px-5 py-4 text-gray-400 font-medium">NGN (Pro)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -157,19 +158,19 @@ export default function AffiliatePage() {
                     </td>
                     <td className="px-5 py-4 text-gray-300 text-xs">{tier.range} active</td>
                     <td className="px-5 py-4 text-center">
+                      <span className={`font-bold text-sm ${i === 4 ? 'text-amber-400' : 'text-gray-300'}`}>{tier.pct}%</span>
+                    </td>
+                    <td className="px-5 py-4 text-center">
                       <div className="text-blue-400 font-bold font-mono">${tier.starter.earn.toFixed(2)}</div>
-                      <div className="text-gray-600 text-xs">{tier.starter.pct}%</div>
+                      <div className="text-gray-600 text-xs">₦{Math.round(tier.starter.earn * 1370).toLocaleString()}</div>
                     </td>
                     <td className="px-5 py-4 text-center">
                       <div className="text-violet-400 font-bold font-mono">${tier.pro.earn.toFixed(2)}</div>
-                      <div className={`text-xs font-bold ${i === 4 ? 'text-amber-400' : 'text-gray-600'}`}>{tier.pro.pct}%{i === 4 ? ' ★' : ''}</div>
+                      <div className="text-gray-600 text-xs">₦{Math.round(tier.pro.earn * 1370).toLocaleString()}</div>
                     </td>
                     <td className="px-5 py-4 text-center">
                       <div className="text-amber-400 font-bold font-mono">${tier.agency.earn.toFixed(2)}</div>
-                      <div className="text-gray-600 text-xs">{tier.agency.pct}%</div>
-                    </td>
-                    <td className="px-5 py-4 text-right text-green-400 font-mono text-xs">
-                      ₦{(tier.pro.earn * 1370).toLocaleString()}
+                      <div className="text-gray-600 text-xs">₦{Math.round(tier.agency.earn * 1370).toLocaleString()}</div>
                     </td>
                   </tr>
                 ))}
@@ -177,22 +178,25 @@ export default function AffiliatePage() {
             </table>
           </div>
           <div className="px-5 py-3 border-t border-gray-800 text-xs text-gray-500">
-            ★ 30% is the maximum rate — earned on Pro plan when you have 60+ active paying referrals.
-            Free affiliates earn 50% of all rates above.
+            Same % for every plan — fair and proportional. Free affiliates earn 50% of all rates above.
+            Commission recurs monthly while your referral stays subscribed.
           </div>
         </div>
 
-        {/* Real example: 60 referred, 20 pay */}
+        {/* Real example: 60 referred, 12 per tier */}
         <div className="bg-gray-900 border border-amber-700/30 rounded-2xl p-6 mb-4">
-          <p className="text-white font-bold mb-1">📊 Real Example: You referred 60 people, but only 20 are paying</p>
-          <p className="text-gray-500 text-xs mb-4">The 40 who signed up free don't count toward your tier. Your tier = 20 active paying = <strong className="text-violet-400">Level 3</strong>.</p>
-          <p className="text-gray-400 text-xs mb-3">Assume: 7 on Starter · 7 on Pro · 6 on Agency</p>
-          <div className="grid md:grid-cols-4 gap-3">
+          <p className="text-white font-bold mb-1">📊 Real Example: 60 active referrals — 12 people per tier</p>
+          <p className="text-gray-500 text-xs mb-4">
+            As you grew to 60, 12 people joined at each tier (4 Starter + 4 Pro + 4 Agency per group).
+            Now all 60 are active → you are at <strong className="text-amber-400">Level 5 (15.5%)</strong>.
+          </p>
+          <p className="text-gray-300 text-xs font-semibold mb-2">Monthly recurring (all 60 pay again every month at your current L5 rate):</p>
+          <div className="grid md:grid-cols-4 gap-3 mb-3">
             {[
-              { label: '7 × Starter ($9)', calc: '7 × $1.62', total: '$11.34', ngn: '₦15,536', color: 'text-blue-400' },
-              { label: '7 × Pro ($29)', calc: '7 × $6.38', total: '$44.66', ngn: '₦61,184', color: 'text-violet-400' },
-              { label: '6 × Agency ($79)', calc: '6 × $7.90', total: '$47.40', ngn: '₦64,938', color: 'text-amber-400' },
-              { label: 'TOTAL per month', calc: 'all 20 users', total: '$103.40', ngn: '₦141,658', color: 'text-green-400' },
+              { label: '20 × Starter ($9)', calc: '20 × $1.40', total: '$28.00', ngn: '₦38,360', color: 'text-blue-400' },
+              { label: '20 × Pro ($29)', calc: '20 × $4.50', total: '$90.00', ngn: '₦123,300', color: 'text-violet-400' },
+              { label: '20 × Agency ($79)', calc: '20 × $12.25', total: '$245.00', ngn: '₦335,650', color: 'text-amber-400' },
+              { label: 'YOU EARN per month', calc: 'all 60 users', total: '$363.00', ngn: '₦497,310', color: 'text-green-400' },
             ].map(s => (
               <div key={s.label} className="bg-gray-800 rounded-xl p-4">
                 <p className="text-gray-500 text-xs mb-1">{s.label}</p>
@@ -202,24 +206,23 @@ export default function AffiliatePage() {
               </div>
             ))}
           </div>
-          <p className="text-gray-500 text-xs mt-3">
-            That ₦141,658 repeats <strong className="text-white">every month</strong> those 20 stay subscribed.
-            If the remaining 40 free users upgrade, you jump to <strong className="text-white">Level 5 (60+ active) and earn 30%</strong>.
+          <p className="text-gray-500 text-xs">
+            ₦497,310 comes in <strong className="text-white">every month</strong> those 60 stay subscribed — that repeats without doing any extra work.
           </p>
         </div>
       </section>
 
-      {/* Scale scenario */}
+      {/* Scale scenario — 10 affiliates */}
       <section className="max-w-5xl mx-auto px-6 py-4">
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-1">🚀 At Level 5 (60+ active paying referrals)</h2>
-          <p className="text-xs text-gray-500 mb-5">Assume 20 Starter · 20 Pro · 20 Agency = 60 active</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <h2 className="text-lg font-bold text-white mb-1">🚀 10 Affiliates × 60 Referrals Each = 600 Users</h2>
+          <p className="text-xs text-gray-500 mb-5">Each affiliate at L5 (15.5%) · 20 Starter + 20 Pro + 20 Agency per affiliate</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4">
             {[
-              { label: '20 Starter (25%)',  value: '$45/mo',    sub: '20 × $2.25',    color: 'text-blue-400' },
-              { label: '20 Pro (30%)',      value: '$174/mo',   sub: '20 × $8.70',    color: 'text-violet-400' },
-              { label: '20 Agency (15%)',   value: '$237/mo',   sub: '20 × $11.85',   color: 'text-amber-400' },
-              { label: 'Total per month',   value: '$456/mo',   sub: '₦624,720',      color: 'text-green-400' },
+              { label: '1 affiliate earns',     value: '$363/mo',    sub: '₦497,310/mo',     color: 'text-violet-400' },
+              { label: '10 affiliates earn',    value: '$3,630/mo',  sub: '₦4,973,100/mo',   color: 'text-amber-400' },
+              { label: 'Total revenue (600 users)', value: '$23,400/mo', sub: '₦32,058,000/mo', color: 'text-white' },
+              { label: 'YOU keep after paying',  value: '$19,770/mo', sub: '₦27,084,900/mo',  color: 'text-green-400' },
             ].map(s => (
               <div key={s.label} className="bg-gray-800 rounded-xl p-4">
                 <p className="text-xs text-gray-500 mb-1">{s.label}</p>
@@ -228,6 +231,9 @@ export default function AffiliatePage() {
               </div>
             ))}
           </div>
+          <p className="text-xs text-gray-500">
+            Affiliate payout = 15.5% of revenue. Owner keeps 84.5% before operational costs (hosting, payment fees, etc).
+          </p>
         </div>
       </section>
 
