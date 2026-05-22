@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getCommissionAmount, getTierLabel, getNextTierThreshold, getTierEarning, usdToNgn } from '@/lib/affiliate'
+import { getCommissionAmount, getCommissionRate, getTierLabel, getNextTierThreshold, usdToNgn, COMMISSION_TABLE, PLAN_PRICES } from '@/lib/affiliate'
 
-const TIER_EARN_PAID:   Record<string, number> = { L1: 3, L2: 5, L3: 10, L4: 15 }
-const TIER_EARN_FREE:   Record<string, number> = { L1: 1.5, L2: 2.5, L3: 5, L4: 7.5 }
+const TIERS = ['L1','L2','L3','L4','L5'] as const
+const TIER_RANGES: Record<string, string> = {
+  L1: '0–9', L2: '10–19', L3: '20–39', L4: '40–59', L5: '60+'
+}
 
 type Profile = {
   id: string
@@ -260,56 +262,79 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* Commission tier table */}
+        {/* Commission table — plan × tier */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-6">
           <div className="px-5 py-4 border-b border-gray-800">
-            <p className="text-sm font-semibold text-white">Your Earnings Per Referral ({tier})</p>
+            <p className="text-sm font-semibold text-white">What You Earn Per Referral — By Plan & Tier</p>
             <p className="text-xs text-gray-500 mt-0.5">
-              {isPaidUser
-                ? 'Paid affiliate — full rate applies'
-                : 'Free affiliate — 50% rate. Upgrade to any paid plan to earn 2× more.'}
+              Your current tier: <span className="text-violet-400 font-bold">{tier}</span> ({profile.activeReferrals} active paying referrals)
+              {!isPaidUser && ' · Free affiliate — upgrade to any paid plan to earn 2× more'}
             </p>
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-800 text-xs text-gray-500">
-                <th className="text-left px-5 py-3">Tier</th>
-                <th className="text-left px-5 py-3">Active Referrals Needed</th>
-                <th className="text-right px-5 py-3">Paid Affiliate</th>
-                <th className="text-right px-5 py-3">Free Affiliate</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {(['L1', 'L2', 'L3', 'L4'] as const).map((t, i) => {
-                const ranges = ['0 – 9', '10 – 19', '20 – 39', '40+']
-                const paidAmt = TIER_EARN_PAID[t]
-                const freeAmt = TIER_EARN_FREE[t]
-                const isActive = tier === t
-                return (
-                  <tr key={t} className={isActive ? 'bg-violet-900/20 border-l-2 border-l-violet-500' : ''}>
-                    <td className="px-5 py-3">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-violet-700 text-white' : 'bg-gray-800 text-gray-400'}`}>{t}</span>
-                      {isActive && <span className="text-xs text-violet-400 ml-2">← you</span>}
-                    </td>
-                    <td className="px-5 py-3 text-gray-400 text-xs">{ranges[i]} active referrals</td>
-                    <td className="px-5 py-3 text-right font-bold font-mono text-green-400">
-                      {currency === 'NGN' ? `₦${usdToNgn(paidAmt).toLocaleString()}` : `$${paidAmt}`}
-                    </td>
-                    <td className="px-5 py-3 text-right font-mono text-gray-500">
-                      {currency === 'NGN' ? `₦${usdToNgn(freeAmt).toLocaleString()}` : `$${freeAmt}`}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          <div className="px-5 py-3 border-t border-gray-800 bg-gray-900/50">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 text-xs text-gray-500">
+                  <th className="text-left px-4 py-3">Tier</th>
+                  <th className="text-left px-4 py-3">Active Refs</th>
+                  <th className="text-center px-4 py-3 text-blue-400">Starter<br/><span className="text-gray-600 font-normal">$9/mo</span></th>
+                  <th className="text-center px-4 py-3 text-violet-400">Pro<br/><span className="text-gray-600 font-normal">$29/mo</span></th>
+                  <th className="text-center px-4 py-3 text-amber-400">Agency<br/><span className="text-gray-600 font-normal">$79/mo</span></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {TIERS.map((t) => {
+                  const isActive = tier === t
+                  return (
+                    <tr key={t} className={isActive ? 'bg-violet-900/20' : ''}>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          isActive ? 'bg-violet-700 text-white' :
+                          t === 'L5' ? 'bg-amber-900/50 text-amber-300' :
+                          'bg-gray-800 text-gray-400'
+                        }`}>{t}</span>
+                        {isActive && <span className="text-xs text-violet-400 ml-1.5">← you</span>}
+                        {t === 'L5' && <span className="text-xs text-amber-500 ml-1.5">max</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{TIER_RANGES[t]}</td>
+                      {(['STARTER','PRO','AGENCY'] as const).map(plan => {
+                        const paidAmt = COMMISSION_TABLE[plan][t]
+                        const displayAmt = isPaidUser ? paidAmt : paidAmt * 0.5
+                        const pct = Math.round(getCommissionRate(
+                          t === 'L1' ? 0 : t === 'L2' ? 10 : t === 'L3' ? 20 : t === 'L4' ? 40 : 60,
+                          plan, true
+                        ) * 100)
+                        return (
+                          <td key={plan} className="px-4 py-3 text-center">
+                            <div className={`font-bold font-mono ${
+                              isActive ? 'text-green-400 text-base' : 'text-gray-300'
+                            }`}>
+                              {currency === 'NGN'
+                                ? `₦${usdToNgn(displayAmt).toLocaleString()}`
+                                : `$${displayAmt.toFixed(2)}`}
+                            </div>
+                            <div className="text-gray-600 text-xs">{pct}%</div>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-5 py-3 border-t border-gray-800 bg-gray-950/50">
             <p className="text-xs text-gray-500">
-              Your current rate: <span className="text-white font-bold">
-                {currency === 'NGN'
-                  ? `₦${usdToNgn(getCommissionAmount(profile.activeReferrals, isPaidUser)).toLocaleString()}`
-                  : `$${getCommissionAmount(profile.activeReferrals, isPaidUser)}`}
-              </span> per new paying referral.
+              Right now you earn:{' '}
+              <span className="text-blue-400 font-mono font-bold">
+                {currency === 'NGN' ? `₦${usdToNgn(getCommissionAmount(profile.activeReferrals,'STARTER',isPaidUser)).toLocaleString()}` : `$${getCommissionAmount(profile.activeReferrals,'STARTER',isPaidUser).toFixed(2)}`}
+              </span> per Starter ·{' '}
+              <span className="text-violet-400 font-mono font-bold">
+                {currency === 'NGN' ? `₦${usdToNgn(getCommissionAmount(profile.activeReferrals,'PRO',isPaidUser)).toLocaleString()}` : `$${getCommissionAmount(profile.activeReferrals,'PRO',isPaidUser).toFixed(2)}`}
+              </span> per Pro ·{' '}
+              <span className="text-amber-400 font-mono font-bold">
+                {currency === 'NGN' ? `₦${usdToNgn(getCommissionAmount(profile.activeReferrals,'AGENCY',isPaidUser)).toLocaleString()}` : `$${getCommissionAmount(profile.activeReferrals,'AGENCY',isPaidUser).toFixed(2)}`}
+              </span> per Agency
             </p>
           </div>
         </div>

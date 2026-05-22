@@ -4,21 +4,30 @@ import SiteFooter from '@/components/SiteFooter'
 import AffiliateCTA from '@/components/AffiliateCTAWrapper'
 
 /**
- * Affiliate program page — flat-dollar commission per referral.
+ * Affiliate commission: percentage of monthly plan price, by tier.
  *
- * L1 (0–9 active):   $3 per referral
- * L2 (10–19 active): $5 per referral
- * L3 (20–39 active): $10 per referral
- * L4 (40+ active):   $15 per referral (no further cap)
+ * Tier based on ACTIVE PAYING referrals:
+ *   L1: 0–9 | L2: 10–19 | L3: 20–39 | L4: 40–59 | L5: 60+ (max, 30% on Pro)
  *
- * Free (unpaid) affiliates earn 50% of each tier.
+ * Rates:
+ *   Starter($9):  8 / 12 / 18 / 22 / 25%
+ *   Pro($29):    10 / 15 / 22 / 27 / 30%
+ *   Agency($79):  5 /  8 / 10 / 12 / 15%
+ *
+ * Free affiliates earn 50% of each rate.
  */
 
 const TIERS = [
-  { label: 'Level 1', range: '0 – 9 active referrals',  earn: 3,  freeEarn: 1.5,  color: 'text-gray-300',   bg: 'bg-gray-800 text-gray-400' },
-  { label: 'Level 2', range: '10 – 19 active referrals', earn: 5,  freeEarn: 2.5,  color: 'text-blue-300',   bg: 'bg-blue-900/50 text-blue-300' },
-  { label: 'Level 3', range: '20 – 39 active referrals', earn: 10, freeEarn: 5,    color: 'text-violet-300', bg: 'bg-violet-900/50 text-violet-300' },
-  { label: 'Level 4', range: '40+ active referrals',     earn: 15, freeEarn: 7.5,  color: 'text-amber-300',  bg: 'bg-amber-900/50 text-amber-300' },
+  { key: 'L1', label: 'Level 1', range: '0 – 9',  bg: 'bg-gray-800 text-gray-400',
+    starter: { pct: 8,  earn: 0.72 }, pro: { pct: 10, earn: 2.90 }, agency: { pct: 5,  earn: 3.95 } },
+  { key: 'L2', label: 'Level 2', range: '10 – 19', bg: 'bg-blue-900/50 text-blue-300',
+    starter: { pct: 12, earn: 1.08 }, pro: { pct: 15, earn: 4.35 }, agency: { pct: 8,  earn: 6.32 } },
+  { key: 'L3', label: 'Level 3', range: '20 – 39', bg: 'bg-violet-900/50 text-violet-300',
+    starter: { pct: 18, earn: 1.62 }, pro: { pct: 22, earn: 6.38 }, agency: { pct: 10, earn: 7.90 } },
+  { key: 'L4', label: 'Level 4', range: '40 – 59', bg: 'bg-violet-900/70 text-violet-200',
+    starter: { pct: 22, earn: 1.98 }, pro: { pct: 27, earn: 7.83 }, agency: { pct: 12, earn: 9.48 } },
+  { key: 'L5', label: 'Level 5', range: '60+',     bg: 'bg-amber-900/50 text-amber-300',
+    starter: { pct: 25, earn: 2.25 }, pro: { pct: 30, earn: 8.70 }, agency: { pct: 15, earn: 11.85 } },
 ]
 
 const HOW = [
@@ -98,9 +107,9 @@ export default function AffiliatePage() {
           </span>
         </h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">
-          Start at <strong className="text-white">$3 per referral</strong> and grow to{' '}
-          <strong className="text-white">$15 per referral</strong> as your network scales.
-          Simple flat amounts — no percentage math, no plan dependency.
+          Start at <strong className="text-white">10% of Pro</strong> ($2.90/referral) and grow to{' '}
+          <strong className="text-white">30% of Pro</strong> ($8.70/referral) at 60+ active referrals.
+          Higher plan = higher absolute $ for you. Tier up as your network grows.
         </p>
         <AffiliateCTA label="Get Your Referral Link Free →" size="lg" variant="amber" />
         <p className="text-sm text-gray-600 mt-4">Free to join · No cap · Bank transfer payout · 60-day cookie</p>
@@ -121,80 +130,96 @@ export default function AffiliatePage() {
 
       {/* Commission Tier Table */}
       <section id="commission-table" className="max-w-5xl mx-auto px-6 py-10">
-        <h2 className="text-3xl font-bold text-white text-center mb-3">Commission Tiers</h2>
+        <h2 className="text-3xl font-bold text-white text-center mb-3">Full Commission Table</h2>
         <p className="text-gray-400 text-center text-sm mb-8">
-          Flat dollar per referral. Your tier updates live as your referrals grow.
+          % of plan price per referral · Tier based on active paying referrals · Max 30% on Pro at 60+ referrals
         </p>
 
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-6">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-700 text-xs text-gray-500">
-                <th className="text-left px-5 py-4 font-medium">Tier</th>
-                <th className="text-left px-5 py-4 font-medium">Active Referrals</th>
-                <th className="text-right px-5 py-4 font-medium">Paid Affiliate</th>
-                <th className="text-right px-5 py-4 font-medium">Free Affiliate (50%)</th>
-                <th className="text-right px-5 py-4 font-medium">In NGN (paid rate)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {TIERS.map((tier, i) => (
-                <tr key={tier.label} className={i === 3 ? 'bg-amber-950/10' : ''}>
-                  <td className="px-5 py-4">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tier.bg}`}>
-                      {tier.label}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 text-gray-300 text-xs">{tier.range}</td>
-                  <td className="px-5 py-4 text-right">
-                    <span className={`font-bold font-mono text-lg ${tier.color}`}>${tier.earn}</span>
-                    <span className="text-gray-500 text-xs block">per referral</span>
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    <span className="text-gray-400 font-mono">${tier.freeEarn.toFixed(2)}</span>
-                    <span className="text-gray-600 text-xs block">per referral</span>
-                  </td>
-                  <td className="px-5 py-4 text-right text-green-400 font-mono">
-                    ₦{(tier.earn * 1370).toLocaleString()}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-700 text-xs">
+                  <th className="text-left px-5 py-4 text-gray-400 font-medium">Tier</th>
+                  <th className="text-left px-5 py-4 text-gray-400 font-medium">Active Refs</th>
+                  <th className="text-center px-5 py-4 text-blue-400 font-bold">Starter<br/><span className="text-gray-500 font-normal">$9/mo</span></th>
+                  <th className="text-center px-5 py-4 text-violet-400 font-bold">Pro<br/><span className="text-gray-500 font-normal">$29/mo</span></th>
+                  <th className="text-center px-5 py-4 text-amber-400 font-bold">Agency<br/><span className="text-gray-500 font-normal">$79/mo</span></th>
+                  <th className="text-right px-5 py-4 text-gray-400 font-medium">NGN (Pro)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {TIERS.map((tier, i) => (
+                  <tr key={tier.key} className={i === 4 ? 'bg-amber-950/10' : ''}>
+                    <td className="px-5 py-4">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tier.bg}`}>{tier.label}</span>
+                      {i === 4 && <span className="text-amber-500 text-xs ml-2">max</span>}
+                    </td>
+                    <td className="px-5 py-4 text-gray-300 text-xs">{tier.range} active</td>
+                    <td className="px-5 py-4 text-center">
+                      <div className="text-blue-400 font-bold font-mono">${tier.starter.earn.toFixed(2)}</div>
+                      <div className="text-gray-600 text-xs">{tier.starter.pct}%</div>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <div className="text-violet-400 font-bold font-mono">${tier.pro.earn.toFixed(2)}</div>
+                      <div className={`text-xs font-bold ${i === 4 ? 'text-amber-400' : 'text-gray-600'}`}>{tier.pro.pct}%{i === 4 ? ' ★' : ''}</div>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <div className="text-amber-400 font-bold font-mono">${tier.agency.earn.toFixed(2)}</div>
+                      <div className="text-gray-600 text-xs">{tier.agency.pct}%</div>
+                    </td>
+                    <td className="px-5 py-4 text-right text-green-400 font-mono text-xs">
+                      ₦{(tier.pro.earn * 1370).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-5 py-3 border-t border-gray-800 text-xs text-gray-500">
+            ★ 30% is the maximum rate — earned on Pro plan when you have 60+ active paying referrals.
+            Free affiliates earn 50% of all rates above.
+          </div>
         </div>
 
-        {/* Example earnings */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-            <p className="text-white font-semibold mb-3">📊 Example: 10 referrals</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-400">First 10 (L1 rate × 10)</span><span className="text-white font-mono">$3 × 10 = $30</span></div>
-              <div className="flex justify-between border-t border-gray-800 pt-2"><span className="text-gray-400">Total earned</span><span className="text-green-400 font-bold font-mono">$30 (₦41,100)</span></div>
-            </div>
+        {/* Real example: 60 referred, 20 pay */}
+        <div className="bg-gray-900 border border-amber-700/30 rounded-2xl p-6 mb-4">
+          <p className="text-white font-bold mb-1">📊 Real Example: You referred 60 people, but only 20 are paying</p>
+          <p className="text-gray-500 text-xs mb-4">The 40 who signed up free don't count toward your tier. Your tier = 20 active paying = <strong className="text-violet-400">Level 3</strong>.</p>
+          <p className="text-gray-400 text-xs mb-3">Assume: 7 on Starter · 7 on Pro · 6 on Agency</p>
+          <div className="grid md:grid-cols-4 gap-3">
+            {[
+              { label: '7 × Starter ($9)', calc: '7 × $1.62', total: '$11.34', ngn: '₦15,536', color: 'text-blue-400' },
+              { label: '7 × Pro ($29)', calc: '7 × $6.38', total: '$44.66', ngn: '₦61,184', color: 'text-violet-400' },
+              { label: '6 × Agency ($79)', calc: '6 × $7.90', total: '$47.40', ngn: '₦64,938', color: 'text-amber-400' },
+              { label: 'TOTAL per month', calc: 'all 20 users', total: '$103.40', ngn: '₦141,658', color: 'text-green-400' },
+            ].map(s => (
+              <div key={s.label} className="bg-gray-800 rounded-xl p-4">
+                <p className="text-gray-500 text-xs mb-1">{s.label}</p>
+                <p className="text-gray-400 text-xs font-mono mb-1">{s.calc}</p>
+                <p className={`font-bold font-mono text-lg ${s.color}`}>{s.total}</p>
+                <p className="text-gray-600 text-xs font-mono">{s.ngn}</p>
+              </div>
+            ))}
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-            <p className="text-white font-semibold mb-3">🚀 Example: 40 referrals</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-400">First 10 (L1 × 10)</span><span className="text-white font-mono">$30</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Next 10 (L2 × 10)</span><span className="text-white font-mono">$50</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Next 20 (L3 × 20)</span><span className="text-white font-mono">$200</span></div>
-              <div className="flex justify-between border-t border-gray-800 pt-2"><span className="text-gray-400">Total earned</span><span className="text-amber-400 font-bold font-mono">$280 (₦383,600)</span></div>
-            </div>
-          </div>
+          <p className="text-gray-500 text-xs mt-3">
+            That ₦141,658 repeats <strong className="text-white">every month</strong> those 20 stay subscribed.
+            If the remaining 40 free users upgrade, you jump to <strong className="text-white">Level 5 (60+ active) and earn 30%</strong>.
+          </p>
         </div>
       </section>
 
       {/* Scale scenario */}
       <section className="max-w-5xl mx-auto px-6 py-4">
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-1">🚀 What if you refer 60+ people?</h2>
-          <p className="text-xs text-gray-500 mb-5">At Level 4 ($15 per referral), referrals 41 onwards each earn you $15.</p>
+          <h2 className="text-lg font-bold text-white mb-1">🚀 At Level 5 (60+ active paying referrals)</h2>
+          <p className="text-xs text-gray-500 mb-5">Assume 20 Starter · 20 Pro · 20 Agency = 60 active</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             {[
-              { label: '60 referrals total',   value: '$380 earned', sub: '(mixed tiers)',  color: 'text-white' },
-              { label: 'From referral 41–60',  value: '$300 earned', sub: '(20 × $15)',     color: 'text-amber-400' },
-              { label: '100 referrals total',  value: '$980 earned', sub: '(60 @ L4)',      color: 'text-violet-400' },
-              { label: 'In Nigerian Naira',    value: '₦1,344,600', sub: '(100 refs)',      color: 'text-green-400' },
+              { label: '20 Starter (25%)',  value: '$45/mo',    sub: '20 × $2.25',    color: 'text-blue-400' },
+              { label: '20 Pro (30%)',      value: '$174/mo',   sub: '20 × $8.70',    color: 'text-violet-400' },
+              { label: '20 Agency (15%)',   value: '$237/mo',   sub: '20 × $11.85',   color: 'text-amber-400' },
+              { label: 'Total per month',   value: '$456/mo',   sub: '₦624,720',      color: 'text-green-400' },
             ].map(s => (
               <div key={s.label} className="bg-gray-800 rounded-xl p-4">
                 <p className="text-xs text-gray-500 mb-1">{s.label}</p>
@@ -223,18 +248,18 @@ export default function AffiliatePage() {
       {/* Free vs Paid comparison */}
       <section className="max-w-3xl mx-auto px-6 py-4 pb-10">
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-4">Free Affiliate vs Paid Affiliate</h2>
+          <h2 className="text-lg font-bold text-white mb-4">Free Affiliate vs Paid Affiliate (Pro example)</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <p className="text-gray-400 font-semibold mb-3 text-sm">Free Affiliate (any user)</p>
+              <p className="text-gray-400 font-semibold mb-3 text-sm">Free Affiliate (on free plan)</p>
               <ul className="space-y-2 text-sm">
                 {[
-                  'L1: $1.50 per referral',
-                  'L2: $2.50 per referral',
-                  'L3: $5.00 per referral',
-                  'L4: $7.50 per referral',
+                  'L1 — Pro referral: $1.45/mo each',
+                  'L2 — Pro referral: $2.18/mo each',
+                  'L3 — Pro referral: $3.19/mo each',
+                  'L4 — Pro referral: $3.92/mo each',
+                  'L5 — Pro referral: $4.35/mo each',
                   'No cost to join',
-                  'Same referral link',
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2 text-gray-300">
                     <span className="text-gray-500">○</span> {item}
@@ -243,15 +268,15 @@ export default function AffiliatePage() {
               </ul>
             </div>
             <div>
-              <p className="text-amber-400 font-semibold mb-3 text-sm">Paid Affiliate (any paid plan)</p>
+              <p className="text-amber-400 font-semibold mb-3 text-sm">Paid Affiliate (any paid plan) — 2×</p>
               <ul className="space-y-2 text-sm">
                 {[
-                  'L1: $3 per referral',
-                  'L2: $5 per referral',
-                  'L3: $10 per referral',
-                  'L4: $15 per referral',
-                  '2× earnings vs free',
-                  'Priority support',
+                  'L1 — Pro referral: $2.90/mo each',
+                  'L2 — Pro referral: $4.35/mo each',
+                  'L3 — Pro referral: $6.38/mo each',
+                  'L4 — Pro referral: $7.83/mo each',
+                  'L5 — Pro referral: $8.70/mo each',
+                  '2× earnings vs free affiliate',
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2 text-gray-300">
                     <span className="text-amber-400">✓</span> {item}
@@ -262,7 +287,7 @@ export default function AffiliatePage() {
                 href="/pricing"
                 className="mt-4 inline-block text-xs text-amber-400 hover:text-amber-300 underline"
               >
-                Upgrade to a paid plan →
+                Upgrade to a paid plan from $9/mo →
               </Link>
             </div>
           </div>
