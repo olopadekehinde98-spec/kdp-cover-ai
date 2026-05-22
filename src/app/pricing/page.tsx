@@ -69,15 +69,23 @@ const NGN_PRICES: Record<string, number> = {
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
-  const [provider, setProvider] = useState<'flutterwave' | 'paddle'>('flutterwave')
+  // 'transfer' = bank transfer (NGN or USD), 'paddle' = card (USD)
+  const [provider, setProvider] = useState<'transfer' | 'paddle'>('transfer')
 
   async function handleSubscribe(plan: string) {
+    // Bank transfer: scroll to payment section and pre-select the plan
+    if (provider === 'transfer') {
+      document.getElementById('bank-transfer')?.scrollIntoView({ behavior: 'smooth' })
+      return
+    }
+
+    // Paddle card checkout
     setLoading(plan)
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, provider }),
+        body: JSON.stringify({ plan, provider: 'paddle' }),
       })
       const data = await res.json()
       if (data.url) {
@@ -109,17 +117,17 @@ export default function PricingPage() {
         </div>
 
         {/* Payment method toggle */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center mb-6">
           <div className="inline-flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-2xl p-1.5">
             <button
-              onClick={() => setProvider('flutterwave')}
+              onClick={() => setProvider('transfer')}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
-                provider === 'flutterwave'
+                provider === 'transfer'
                   ? 'bg-green-700 text-white shadow'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              🇳🇬 Pay with Flutterwave (NGN)
+              🏦 Bank Transfer (NGN / USD)
             </button>
             <button
               onClick={() => setProvider('paddle')}
@@ -129,13 +137,18 @@ export default function PricingPage() {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              🌍 Pay with Card (USD)
+              💳 Pay with Card (USD)
             </button>
           </div>
         </div>
-        {provider === 'flutterwave' && (
+        {provider === 'transfer' && (
           <p className="text-center text-xs text-gray-500 mb-8">
-            Prices shown in USD · NGN equivalent at ₦{NGN_RATE.toLocaleString()}/$1 shown below each plan
+            Transfer to Grey (USD) or OPay (NGN) · Submit receipt · Plan activated within 24 hours
+          </p>
+        )}
+        {provider === 'paddle' && (
+          <p className="text-center text-xs text-gray-500 mb-8">
+            Secure card payment via Paddle · Instant activation
           </p>
         )}
 
@@ -166,7 +179,7 @@ export default function PricingPage() {
               <div className="mb-6">
                 <span className="text-4xl font-bold text-white">${plan.price}</span>
                 <span className="text-gray-500 text-sm">/month</span>
-                {provider === 'flutterwave' && (
+                {provider === 'transfer' && (
                   <div className="text-green-400 text-sm font-medium mt-1">
                     ≈ ₦{NGN_PRICES[plan.key].toLocaleString()} / month
                   </div>
@@ -191,7 +204,7 @@ export default function PricingPage() {
                     : 'bg-gray-800 hover:bg-gray-700 text-gray-200'}`}>
                 {loading === plan.key ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing...</>
-                ) : plan.cta}
+                ) : provider === 'transfer' ? `🏦 Pay by Transfer — ${plan.cta}` : plan.cta}
               </button>
             </div>
           ))}
@@ -250,7 +263,7 @@ export default function PricingPage() {
         </div>
 
         {/* Bank Transfer Payment */}
-        <div className="max-w-3xl mx-auto mb-16">
+        <div id="bank-transfer" className="max-w-3xl mx-auto mb-16 scroll-mt-8">
           <div className="bg-gray-900 border border-amber-700/50 rounded-2xl p-8">
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl">🏦</span>
@@ -276,9 +289,21 @@ export default function PricingPage() {
             <div className="bg-gray-800 rounded-xl p-4 mb-6">
               <div className="text-xs text-gray-400 mb-3 font-semibold">Amount to Transfer</div>
               <div className="grid grid-cols-3 gap-3 text-center text-sm">
-                <div><div className="text-white font-bold">STARTER</div><div className="text-gray-400">$9 · ₦14,000</div></div>
-                <div><div className="text-violet-400 font-bold">PRO</div><div className="text-gray-400">$29 · ₦45,000</div></div>
-                <div><div className="text-amber-400 font-bold">AGENCY</div><div className="text-gray-400">$79 · ₦122,000</div></div>
+                <div>
+                  <div className="text-blue-400 font-bold">STARTER</div>
+                  <div className="text-white font-mono font-bold mt-1">$9</div>
+                  <div className="text-green-400 font-mono text-xs">₦{NGN_PRICES.STARTER.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-violet-400 font-bold">PRO</div>
+                  <div className="text-white font-mono font-bold mt-1">$29</div>
+                  <div className="text-green-400 font-mono text-xs">₦{NGN_PRICES.PRO.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-amber-400 font-bold">AGENCY</div>
+                  <div className="text-white font-mono font-bold mt-1">$79</div>
+                  <div className="text-green-400 font-mono text-xs">₦{NGN_PRICES.AGENCY.toLocaleString()}</div>
+                </div>
               </div>
             </div>
             <Link
