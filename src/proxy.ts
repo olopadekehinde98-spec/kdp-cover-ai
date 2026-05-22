@@ -13,9 +13,19 @@ function extractIp(req: NextRequest): string {
 const isPublicRoute = createRouteMatcher([
   '/',
   '/pricing',
+  '/about',
+  '/affiliate',
+  '/blog(.*)',
+  '/help',
+  '/support',
+  '/refund',
+  '/privacy',
+  '/terms',
+  '/banned',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)',
+  '/api/referral',
   '/api/test-pipeline',
 ])
 

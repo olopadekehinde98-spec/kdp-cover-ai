@@ -8,7 +8,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://kdp-cover-ai-f1kw.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://kdpcoverai.site'),
   title: 'KDP Cover AI — Free AI Book Cover Generator for Amazon KDP',
   description: 'Generate professional full-wrap Amazon KDP book covers with AI in seconds. Front cover, spine & back — exact 300 DPI dimensions, ready to upload. Free to start.',
   keywords: ['Amazon KDP', 'book cover generator', 'AI book cover', 'KDP cover maker', 'self-publishing', 'print-ready PDF', 'full wrap cover'],
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: 'KDP Cover AI — Free AI Book Cover Generator for Amazon KDP',
     description: 'Generate professional full-wrap Amazon KDP book covers with AI in seconds. Front cover, spine & back — exact 300 DPI dimensions, ready to upload. Free to start.',
     type: 'website',
-    url: 'https://kdp-cover-ai.vercel.app',
+    url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://kdpcoverai.site',
     siteName: 'KDP Cover AI',
     images: [{ url: 'https://kdp-cover-ai.vercel.app/og-image.png', width: 1200, height: 630, alt: 'KDP Cover AI — Generate Amazon Book Covers in Seconds' }],
   },
