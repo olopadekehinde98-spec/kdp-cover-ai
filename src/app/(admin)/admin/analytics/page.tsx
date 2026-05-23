@@ -69,6 +69,17 @@ export default function AdminAnalyticsPage() {
     )
   }
 
+  if (data?.error === 'Forbidden' || data?.error === 'Unauthorized') {
+    return (
+      <div className="flex-1 py-16 px-6 max-w-2xl mx-auto">
+        <div className="bg-gray-900 border border-red-700/50 rounded-2xl p-8">
+          <h1 className="text-2xl font-bold text-white mb-2">🔒 Access Denied</h1>
+          <p className="text-gray-400">You don&apos;t have permission to view analytics. Make sure <code className="text-violet-400">OWNER_EMAIL</code> is set in Vercel and matches your account email.</p>
+        </div>
+      </div>
+    )
+  }
+
   if (data?.setup_needed || !data) {
     return (
       <div className="flex-1 py-16 px-6 max-w-2xl mx-auto">
