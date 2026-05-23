@@ -31,7 +31,7 @@ export const PLANS = {
       if (!id) throw new Error('FLW_PLAN_STARTER env var is not set')
       return id
     },
-    amount: 9,
+    amount: 10,
     name: 'Starter',
   },
   PRO: {
@@ -40,7 +40,7 @@ export const PLANS = {
       if (!id) throw new Error('FLW_PLAN_PRO env var is not set')
       return id
     },
-    amount: 29,
+    amount: 30,
     name: 'Pro',
   },
   AGENCY: {
@@ -49,7 +49,7 @@ export const PLANS = {
       if (!id) throw new Error('FLW_PLAN_AGENCY env var is not set')
       return id
     },
-    amount: 79,
+    amount: 80,
     name: 'Agency',
   },
 } as const

@@ -10,7 +10,7 @@ const PLANS = [
   {
     key: 'STARTER',
     name: 'Starter',
-    price: 9,
+    price: 10,
     desc: 'Perfect for new authors',
     features: [
       '15 covers per month',
@@ -25,7 +25,7 @@ const PLANS = [
   {
     key: 'PRO',
     name: 'Pro',
-    price: 29,
+    price: 30,
     desc: 'Most popular for serious authors',
     features: [
       'Unlimited cover generation',
@@ -43,7 +43,7 @@ const PLANS = [
   {
     key: 'AGENCY',
     name: 'Agency',
-    price: 79,
+    price: 80,
     desc: 'For publishers & book formatters',
     features: [
       'Everything in Pro',
@@ -61,31 +61,31 @@ const PLANS = [
 
 const NGN_RATE = 1370
 const NGN_PRICES: Record<string, number> = {
-  STARTER: 12330,
-  PRO: 39730,
-  AGENCY: 108230,
+  STARTER: 13700,
+  PRO: 41100,
+  AGENCY: 109600,
 }
 
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
-  // 'transfer' = bank transfer (NGN or USD), 'paddle' = card (USD)
-  const [provider, setProvider] = useState<'transfer' | 'paddle'>('transfer')
+  // 'flutterwave' = card via Flutterwave, 'transfer' = bank transfer fallback
+  const [provider, setProvider] = useState<'flutterwave' | 'transfer'>('flutterwave')
 
   async function handleSubscribe(plan: string) {
-    // Bank transfer: scroll to payment section and pre-select the plan
+    // Bank transfer: scroll to payment section
     if (provider === 'transfer') {
       document.getElementById('bank-transfer')?.scrollIntoView({ behavior: 'smooth' })
       return
     }
 
-    // Paddle card checkout
+    // Flutterwave card checkout
     setLoading(plan)
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, provider: 'paddle' }),
+        body: JSON.stringify({ plan, provider: 'flutterwave' }),
       })
       const data = await res.json()
       if (data.url) {
@@ -120,6 +120,16 @@ export default function PricingPage() {
         <div className="flex justify-center mb-6">
           <div className="inline-flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-2xl p-1.5">
             <button
+              onClick={() => setProvider('flutterwave')}
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
+                provider === 'flutterwave'
+                  ? 'bg-violet-700 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              💳 Pay with Card
+            </button>
+            <button
               onClick={() => setProvider('transfer')}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
                 provider === 'transfer'
@@ -129,26 +139,16 @@ export default function PricingPage() {
             >
               🏦 Bank Transfer (NGN / USD)
             </button>
-            <button
-              onClick={() => setProvider('paddle')}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
-                provider === 'paddle'
-                  ? 'bg-blue-700 text-white shadow'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              💳 Pay with Card (USD)
-            </button>
           </div>
         </div>
+        {provider === 'flutterwave' && (
+          <p className="text-center text-xs text-gray-500 mb-8">
+            Secure card payment · Visa, Mastercard, Verve · Instant activation
+          </p>
+        )}
         {provider === 'transfer' && (
           <p className="text-center text-xs text-gray-500 mb-8">
             Transfer to Grey (USD) or OPay (NGN) · Submit receipt · Plan activated within 24 hours
-          </p>
-        )}
-        {provider === 'paddle' && (
-          <p className="text-center text-xs text-gray-500 mb-8">
-            Secure card payment via Paddle · Instant activation
           </p>
         )}
 
@@ -204,7 +204,7 @@ export default function PricingPage() {
                     : 'bg-gray-800 hover:bg-gray-700 text-gray-200'}`}>
                 {loading === plan.key ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing...</>
-                ) : provider === 'transfer' ? `🏦 Pay by Transfer — ${plan.cta}` : plan.cta}
+                ) : provider === 'transfer' ? `🏦 Pay by Transfer — ${plan.cta}` : `💳 ${plan.cta}`}
               </button>
             </div>
           ))}
@@ -291,17 +291,17 @@ export default function PricingPage() {
               <div className="grid grid-cols-3 gap-3 text-center text-sm">
                 <div>
                   <div className="text-blue-400 font-bold">STARTER</div>
-                  <div className="text-white font-mono font-bold mt-1">$9</div>
+                  <div className="text-white font-mono font-bold mt-1">$10</div>
                   <div className="text-green-400 font-mono text-xs">₦{NGN_PRICES.STARTER.toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-violet-400 font-bold">PRO</div>
-                  <div className="text-white font-mono font-bold mt-1">$29</div>
+                  <div className="text-white font-mono font-bold mt-1">$30</div>
                   <div className="text-green-400 font-mono text-xs">₦{NGN_PRICES.PRO.toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-amber-400 font-bold">AGENCY</div>
-                  <div className="text-white font-mono font-bold mt-1">$79</div>
+                  <div className="text-white font-mono font-bold mt-1">$80</div>
                   <div className="text-green-400 font-mono text-xs">₦{NGN_PRICES.AGENCY.toLocaleString()}</div>
                 </div>
               </div>

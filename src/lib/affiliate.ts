@@ -1,9 +1,9 @@
 export const EXCHANGE_RATE = 1370 // $1 = ₦1,370
 
 export const PLAN_PRICES: Record<string, number> = {
-  STARTER: 9,
-  PRO: 29,
-  AGENCY: 79,
+  STARTER: 10,
+  PRO: 30,
+  AGENCY: 80,
 }
 
 /**
@@ -19,11 +19,11 @@ export const PLAN_PRICES: Record<string, number> = {
  *   L5: 60+  ← maximum (15.5% of any plan price)
  *
  * Dollar amounts per referral per month (paid affiliate):
- *   L1: 5%  → Starter $0.45 · Pro $1.45 · Agency $3.95
- *   L2: 8%  → Starter $0.72 · Pro $2.32 · Agency $6.32
- *   L3: 10% → Starter $0.90 · Pro $2.90 · Agency $7.90
- *   L4: 13% → Starter $1.17 · Pro $3.77 · Agency $10.27
- *   L5: 15.5% → Starter $1.40 · Pro $4.50 · Agency $12.25
+ *   L1: 5%  → Starter $0.50 · Pro $1.50 · Agency $4.00
+ *   L2: 8%  → Starter $0.80 · Pro $2.40 · Agency $6.40
+ *   L3: 10% → Starter $1.00 · Pro $3.00 · Agency $8.00
+ *   L4: 13% → Starter $1.30 · Pro $3.90 · Agency $10.40
+ *   L5: 15.5% → Starter $1.55 · Pro $4.65 · Agency $12.40
  *
  * Free affiliates earn 50% of each rate.
  */
@@ -86,9 +86,9 @@ export function usdToNgn(usd: number): number {
 
 /** Pre-computed dollar amounts for each tier/plan (paid affiliate full rate) */
 export const COMMISSION_TABLE: Record<string, Record<string, number>> = {
-  STARTER: { L1: 0.45, L2: 0.72, L3: 0.90, L4: 1.17, L5: 1.40 },
-  PRO:     { L1: 1.45, L2: 2.32, L3: 2.90, L4: 3.77, L5: 4.50 },
-  AGENCY:  { L1: 3.95, L2: 6.32, L3: 7.90, L4: 10.27, L5: 12.25 },
+  STARTER: { L1: 0.50, L2: 0.80, L3: 1.00, L4: 1.30, L5: 1.55 },
+  PRO:     { L1: 1.50, L2: 2.40, L3: 3.00, L4: 3.90, L5: 4.65 },
+  AGENCY:  { L1: 4.00, L2: 6.40, L3: 8.00, L4: 10.40, L5: 12.40 },
 }
 
 /** Tier rate as percentage string e.g. "15.5%" */
