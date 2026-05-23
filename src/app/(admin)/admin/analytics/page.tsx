@@ -169,27 +169,44 @@ export default function AdminAnalyticsPage() {
 
           {/* Daily visitors bar chart */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-            <p className="text-sm font-semibold text-white mb-4">Daily Visitors — Last 14 Days</p>
-            <div className="flex items-end gap-1 h-28">
-              {data.daily.map(d => {
-                const h = maxDaily > 0 ? Math.max(4, (parseInt(d.users) / maxDaily) * 100) : 4
-                return (
-                  <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap z-10">
-                      {d.date}<br />{d.users} users · {d.sessions} sessions
-                    </div>
-                    <div
-                      className="w-full bg-violet-600 hover:bg-violet-500 rounded-sm transition-all cursor-pointer"
-                      style={{ height: `${h}%` }}
-                    />
-                  </div>
-                )
-              })}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-white">Daily Visitors — Last 14 Days</p>
+              {maxDaily > 0 && <span className="text-xs text-gray-500">Peak: {maxDaily} visitors</span>}
             </div>
-            <div className="flex justify-between text-xs text-gray-600 mt-2">
-              <span>{data.daily[0]?.date?.slice(5)}</span>
-              <span>{data.daily[data.daily.length - 1]?.date?.slice(5)}</span>
-            </div>
+            {!data.daily?.length || maxDaily === 0 ? (
+              <div className="flex flex-col items-center justify-center h-28 text-center">
+                <p className="text-3xl mb-2">📊</p>
+                <p className="text-gray-400 text-sm font-medium">No visitor data yet</p>
+                <p className="text-gray-600 text-xs mt-1">Data appears once people visit your site</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-end gap-1 h-28">
+                  {data.daily.map(d => {
+                    const count = parseInt(d.users)
+                    const h = maxDaily > 0 ? Math.max(8, (count / maxDaily) * 100) : 8
+                    return (
+                      <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
+                        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap z-10">
+                          {d.date}<br />{d.users} users · {d.sessions} sessions
+                        </div>
+                        {count > 0 && (
+                          <span className="text-[9px] text-gray-500 hidden group-hover:block absolute -top-4">{count}</span>
+                        )}
+                        <div
+                          className="w-full bg-violet-600 hover:bg-violet-400 rounded-sm transition-all cursor-pointer"
+                          style={{ height: `${h}%` }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="flex justify-between text-xs text-gray-600 mt-2">
+                  <span>{data.daily[0]?.date?.slice(5)}</span>
+                  <span>{data.daily[data.daily.length - 1]?.date?.slice(5)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Traffic sources */}
