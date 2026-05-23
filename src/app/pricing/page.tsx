@@ -93,7 +93,7 @@ export default function PricingPage() {
       } else if (res.status === 401) {
         router.push('/sign-up')
       } else {
-        alert('Something went wrong. Please try again.')
+        alert(`Error: ${data.error || data.detail || 'Something went wrong. Please try again.'}`)
       }
     } catch {
       router.push('/sign-up')
