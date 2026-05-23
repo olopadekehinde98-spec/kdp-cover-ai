@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   experimental: {
     // Allow sharp to run in serverless functions
   },
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
+  },
 }
 
 export default nextConfig;
