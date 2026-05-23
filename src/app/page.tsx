@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
+import LiveStats from '@/components/LiveStats'
+import CoverGallery from '@/components/CoverGallery'
 
 const FEATURES = [
   {
@@ -85,6 +87,9 @@ export default function LandingPage() {
         </div>
         <p className="text-sm text-gray-600">3 free covers · No credit card required</p>
 
+        {/* Live stats */}
+        <LiveStats />
+
         {/* Mock demo strip */}
         <div className="mt-16 bg-gray-900 border border-gray-800 rounded-3xl p-6 text-left shadow-2xl">
           <div className="flex items-center gap-2 mb-4">
@@ -149,6 +154,9 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* Cover Gallery */}
+      <CoverGallery />
 
       {/* Before/After */}
       <section className="max-w-4xl mx-auto px-6 py-20">
