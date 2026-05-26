@@ -16,20 +16,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Rating must be 1–5' }, { status: 400 })
   }
 
-  await prisma.$transaction([
-    prisma.siteRating.create({
-      data: {
-        userId: user.id,
-        coverId: coverId || null,
-        rating: Number(rating),
-        comment: comment || null,
-      },
-    }),
-    prisma.user.update({
-      where: { id: user.id },
-      data: { hasRated: true },
-    }),
-  ])
+  await prisma.siteRating.create({
+    data: {
+      userId: user.id,
+      coverId: coverId || null,
+      rating: Number(rating),
+      comment: comment || null,
+    },
+  })
 
   return NextResponse.json({ success: true })
 }

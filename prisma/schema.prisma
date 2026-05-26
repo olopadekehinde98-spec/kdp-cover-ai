@@ -47,7 +47,6 @@ model User {
   subscriptionStatus   String?  @default("inactive")
   generationsUsed      Int      @default(0)
   generationsLimit     Int      @default(3)
-  hasRated             Boolean  @default(false)
   isBanned             Boolean  @default(false)
   isAdmin              Boolean  @default(false)
   ipAddress            String?

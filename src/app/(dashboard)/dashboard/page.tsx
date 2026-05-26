@@ -27,6 +27,7 @@ export default async function DashboardPage() {
           status: true, trimSize: true, pageCount: true, createdAt: true,
         },
       },
+      siteRatings: { take: 1, select: { id: true } },
     },
   })
 
@@ -47,6 +48,7 @@ export default async function DashboardPage() {
   const clerkUser = await currentUser()
 
   const hasCovers = user.covers.length > 0
+  const hasRated = (user.siteRatings?.length ?? 0) > 0
   const latestCoverId = user.covers[0]?.id
 
   return (
@@ -55,7 +57,7 @@ export default async function DashboardPage() {
       <RefApply />
 
       {/* Google review banner — show if user has covers and hasn't rated yet */}
-      {hasCovers && !user.hasRated && (
+      {hasCovers && !hasRated && (
         <GoogleReviewBanner latestCoverId={latestCoverId} />
       )}
 
