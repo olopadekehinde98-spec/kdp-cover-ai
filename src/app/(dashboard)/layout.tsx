@@ -8,14 +8,47 @@ import SupportChatBot from '@/components/SupportChatBot'
 import IpTracker from '@/components/IpTracker'
 import ReferralCapture from '@/components/ReferralCapture'
 
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'KDP-'
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  return code
+}
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  const [user, clerkUser] = await Promise.all([
-    prisma.user.findUnique({ where: { clerkId: userId }, select: { plan: true, email: true, isBanned: true } }),
-    currentUser(),
-  ])
+  const clerkUser = await currentUser()
+  if (!clerkUser) redirect('/sign-in')
+
+  let user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+    select: { plan: true, email: true, isBanned: true },
+  })
+
+  // Auto-create user in DB if webhook hasn't fired yet
+  if (!user) {
+    const email = clerkUser.emailAddresses?.[0]?.emailAddress ?? ''
+    const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || undefined
+    const isOwner = email === process.env.OWNER_EMAIL
+    await prisma.user.create({
+      data: {
+        clerkId: userId,
+        email,
+        name,
+        imageUrl: clerkUser.imageUrl,
+        plan: isOwner ? 'AGENCY' : 'FREE',
+        generationsLimit: isOwner ? 999999 : 3,
+        subscriptionStatus: isOwner ? 'active' : 'free',
+        referralCode: generateReferralCode(),
+      },
+    })
+    user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { plan: true, email: true, isBanned: true },
+    })
+  }
 
   if (!user) redirect('/sign-in')
 

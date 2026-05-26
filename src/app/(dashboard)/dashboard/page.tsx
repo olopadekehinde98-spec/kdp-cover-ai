@@ -8,6 +8,13 @@ import RefApply from '@/components/RefApply'
 import BillingPortalButton from '@/components/BillingPortalButton'
 import GoogleReviewBanner from '@/components/GoogleReviewBanner'
 
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'KDP-'
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  return code
+}
+
 export default async function DashboardPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
@@ -16,7 +23,8 @@ export default async function DashboardPage() {
     throw new Error('DATABASE_URL is not configured. Please add your PostgreSQL connection string in Vercel → Settings → Environment Variables.')
   }
 
-  const user = await prisma.user.findUnique({
+  // Auto-create user in DB if they authenticated via Clerk but webhook hasn't fired yet
+  let user = await prisma.user.findUnique({
     where: { clerkId: userId },
     include: {
       covers: {
@@ -31,6 +39,41 @@ export default async function DashboardPage() {
     },
   })
 
+  if (!user) {
+    // User is authenticated with Clerk but not in DB — create them now
+    const clerkData = await currentUser()
+    if (!clerkData) redirect('/sign-in')
+
+    const email = clerkData.emailAddresses?.[0]?.emailAddress ?? ''
+    const name = [clerkData.firstName, clerkData.lastName].filter(Boolean).join(' ') || undefined
+    const isOwner = email === process.env.OWNER_EMAIL
+    const referralCode = generateReferralCode()
+
+    user = await prisma.user.create({
+      data: {
+        clerkId: userId,
+        email,
+        name,
+        imageUrl: clerkData.imageUrl,
+        plan: isOwner ? 'AGENCY' : 'FREE',
+        generationsLimit: isOwner ? 999999 : 3,
+        subscriptionStatus: isOwner ? 'active' : 'free',
+        referralCode,
+      },
+      include: {
+        covers: {
+          orderBy: { createdAt: 'desc' },
+          take: 6,
+          select: {
+            id: true, title: true, genre: true, imageUrl: true,
+            status: true, trimSize: true, pageCount: true, createdAt: true,
+          },
+        },
+        siteRatings: { take: 1, select: { id: true } },
+      },
+    })
+  }
+
   // Referral data
   const referralCount = user?.referralCode
     ? await prisma.user.count({ where: { referredByCode: user.referralCode } })
@@ -38,8 +81,6 @@ export default async function DashboardPage() {
   const activeReferrals = user?.referralCode
     ? await prisma.user.count({ where: { referredByCode: user.referralCode, subscriptionStatus: 'active' } })
     : 0
-
-  if (!user) redirect('/sign-in')
 
   const usagePercent = user.generationsLimit > 0
     ? Math.min(100, Math.round((user.generationsUsed / user.generationsLimit) * 100))
