@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Day 5 Carousel — 5 KDP Mistakes</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  /* Each slide is 1080x1080 scaled to 540x540 for preview */
+  .slide {
+    width: 540px;
+    height: 540px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  /* ── SLIDE 1: Cover ── */
+  .slide-1 {
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px;
+    border: 1px solid #2d2d5e;
+  }
+  .slide-1 .badge {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    color: #a78bfa;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 28px;
+  }
+  .slide-1 h1 {
+    font-size: 42px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .slide-1 h1 span { color: #a78bfa; }
+  .slide-1 p { color: #9ca3af; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+  .slide-1 .cta {
+    background: #7c3aed;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 12px;
+  }
+  .slide-1 .swipe {
+    position: absolute;
+    bottom: 20px;
+    right: 24px;
+    color: #4b5563;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .logo {
+    position: absolute;
+    top: 20px;
+    left: 24px;
+    color: #4b5563;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── SLIDES 2–6: Mistake slides ── */
+  .slide-mistake {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 44px;
+    border: 1px solid #1f2937;
+  }
+  .slide-mistake .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .slide-mistake .number {
+    font-size: 96px;
+    font-weight: 900;
+    line-height: 1;
+    opacity: 0.08;
+    font-variant-numeric: tabular-nums;
+  }
+  .slide-mistake .icon { font-size: 40px; }
+  .slide-mistake .mid { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
+  .slide-mistake .tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .slide-mistake h2 { font-size: 34px; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 14px; }
+  .slide-mistake p { color: #9ca3af; font-size: 15px; line-height: 1.6; }
+  .slide-mistake .fix {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .slide-mistake .fix .fix-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #6b7280; margin-bottom: 2px; }
+  .slide-mistake .fix .fix-text { font-size: 13px; color: #d1d5db; font-weight: 600; }
+  .slide-mistake .fix .check { font-size: 20px; flex-shrink: 0; }
+  .counter {
+    position: absolute;
+    bottom: 20px;
+    right: 24px;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  /* ── SLIDE 7: CTA ── */
+  .slide-cta {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px;
+    border: 1px solid #3730a3;
+  }
+  .slide-cta .emoji { font-size: 52px; margin-bottom: 20px; }
+  .slide-cta h2 { font-size: 36px; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px; }
+  .slide-cta p { color: #c7d2fe; font-size: 16px; margin-bottom: 28px; line-height: 1.5; }
+  .slide-cta .url {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 800;
+    padding: 14px 32px;
+    border-radius: 14px;
+    letter-spacing: 0.5px;
+  }
+  .slide-cta .sub { color: #818cf8; font-size: 13px; margin-top: 16px; font-weight: 600; }
+
+  /* ── Mistake accent colors ── */
+  .m1 { background: linear-gradient(135deg, #1c0a0a 0%, #1a0f0f 100%); }
+  .m1 .number, .m1 .tag { color: #ef4444; }
+  .m1 .check { color: #22c55e; }
+
+  .m2 { background: linear-gradient(135deg, #0a1a0a 0%, #0f1a0f 100%); }
+  .m2 .number, .m2 .tag { color: #f97316; }
+  .m2 .check { color: #22c55e; }
+
+  .m3 { background: linear-gradient(135deg, #0a0a1c 0%, #0f0f1a 100%); }
+  .m3 .number, .m3 .tag { color: #a78bfa; }
+  .m3 .check { color: #22c55e; }
+
+  .m4 { background: linear-gradient(135deg, #1c1000 0%, #1a1500 100%); }
+  .m4 .number, .m4 .tag { color: #fbbf24; }
+  .m4 .check { color: #22c55e; }
+
+  .m5 { background: linear-gradient(135deg, #001a1a 0%, #001515 100%); }
+  .m5 .number, .m5 .tag { color: #2dd4bf; }
+  .m5 .check { color: #22c55e; }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: Cover -->
+<div class="slide slide-1">
+  <div class="logo">KDP COVER AI</div>
+  <div class="badge">SWIPE TO LEARN</div>
+  <h1>5 KDP Cover<br/>Mistakes That<br/><span>Get You Rejected</span></h1>
+  <p>Most authors make at least 2 of these.<br/>Every single one is 100% avoidable.</p>
+  <div class="cta">kdpcoverai.site</div>
+  <div class="swipe">SWIPE → 1/7</div>
+</div>
+
+<!-- SLIDE 2: Mistake 1 -->
+<div class="slide slide-mistake m1">
+  <div class="logo">KDP COVER AI</div>
+  <div class="top">
+    <div class="number">01</div>
+    <div class="icon">📐</div>
+  </div>
+  <div class="mid">
+    <div class="tag">Mistake #1</div>
+    <h2>Wrong Spine Width</h2>
+    <p>Your spine width changes with every book based on exact page count and paper type. Off by 0.01" and Amazon rejects the entire upload.</p>
+  </div>
+  <div class="fix">
+    <div class="check">✅</div>
+    <div>
+      <div class="fix-label">The Fix</div>
+      <div class="fix-text">KDP Cover AI calculates your exact spine automatically — you just enter page count.</div>
+    </div>
+  </div>
+  <div class="counter">2/7</div>
+</div>
+
+<!-- SLIDE 3: Mistake 2 -->
+<div class="slide slide-mistake m2">
+  <div class="logo">KDP COVER AI</div>
+  <div class="top">
+    <div class="number">02</div>
+    <div class="icon">✂️</div>
+  </div>
+  <div class="mid">
+    <div class="tag">Mistake #2</div>
+    <h2>No Bleed Area</h2>
+    <p>KDP requires exactly 0.125" of bleed on all 4 sides. Without it, your cover gets white borders after trimming — instant rejection.</p>
+  </div>
+  <div class="fix">
+    <div class="check">✅</div>
+    <div>
+      <div class="fix-label">The Fix</div>
+      <div class="fix-text">0.125" bleed is built in automatically. Every cover. Every time.</div>
+    </div>
+  </div>
+  <div class="counter">3/7</div>
+</div>
+
+<!-- SLIDE 4: Mistake 3 -->
+<div class="slide slide-mistake m3">
+  <div class="logo">KDP COVER AI</div>
+  <div class="top">
+    <div class="number">03</div>
+    <div class="icon">🔍</div>
+  </div>
+  <div class="mid">
+    <div class="tag">Mistake #3</div>
+    <h2>Low Resolution</h2>
+    <p>KDP requires 300 DPI minimum for print. If you design in Canva or export from a low-res source, your cover will look blurry when printed.</p>
+  </div>
+  <div class="fix">
+    <div class="check">✅</div>
+    <div>
+      <div class="fix-label">The Fix</div>
+      <div class="fix-text">All covers export at 300 DPI — print-ready, sharp, KDP-compliant.</div>
+    </div>
+  </div>
+  <div class="counter">4/7</div>
+</div>
+
+<!-- SLIDE 5: Mistake 4 -->
+<div class="slide slide-mistake m4">
+  <div class="logo">KDP COVER AI</div>
+  <div class="top">
+    <div class="number">04</div>
+    <div class="icon">⚠️</div>
+  </div>
+  <div class="mid">
+    <div class="tag">Mistake #4</div>
+    <h2>Text in the Danger Zone</h2>
+    <p>Any text within 0.25" of the trim edge risks being cut off during printing. Most DIY covers place titles way too close to the edge.</p>
+  </div>
+  <div class="fix">
+    <div class="check">✅</div>
+    <div>
+      <div class="fix-label">The Fix</div>
+      <div class="fix-text">All text is placed inside the safe zone automatically — nothing ever gets cut.</div>
+    </div>
+  </div>
+  <div class="counter">5/7</div>
+</div>
+
+<!-- SLIDE 6: Mistake 5 -->
+<div class="slide slide-mistake m5">
+  <div class="logo">KDP COVER AI</div>
+  <div class="top">
+    <div class="number">05</div>
+    <div class="icon">📦</div>
+  </div>
+  <div class="mid">
+    <div class="tag">Mistake #5</div>
+    <h2>Covering the Barcode Area</h2>
+    <p>Amazon prints its own barcode on the back cover. If your design covers that area, KDP can't process your book. Most authors don't know this exists.</p>
+  </div>
+  <div class="fix">
+    <div class="check">✅</div>
+    <div>
+      <div class="fix-label">The Fix</div>
+      <div class="fix-text">Barcode safe zone is automatically reserved on every back cover.</div>
+    </div>
+  </div>
+  <div class="counter">6/7</div>
+</div>
+
+<!-- SLIDE 7: CTA -->
+<div class="slide slide-cta">
+  <div class="logo" style="color:#818cf8">KDP COVER AI</div>
+  <div class="emoji">🚀</div>
+  <h2>Fix All 5 Mistakes<br/>Automatically</h2>
+  <p>KDP Cover AI handles every single one of these — so you never get rejected again.</p>
+  <div class="url">kdpcoverai.site</div>
+  <div class="sub">3 free covers · No credit card required</div>
+  <div class="counter" style="color:#6366f1">7/7</div>
+</div>
+
+<script>
+  // Click any slide to copy a screenshot hint
+  document.querySelectorAll('.slide').forEach((slide, i) => {
+    slide.title = `Slide ${i+1} — Right-click → Screenshot or use Snipping Tool`
+  })
+</script>
+</body>
+</html>

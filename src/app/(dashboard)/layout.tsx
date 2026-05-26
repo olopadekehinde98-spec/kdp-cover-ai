@@ -28,22 +28,44 @@ export default async function DashboardLayout({ children }: { children: React.Re
   })
 
   // Auto-create user in DB if webhook hasn't fired yet
+  // Uses upsert to safely handle race conditions and duplicate email from old Clerk instance
   if (!user) {
     const email = clerkUser.emailAddresses?.[0]?.emailAddress ?? ''
     const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || undefined
     const isOwner = email === process.env.OWNER_EMAIL
-    await prisma.user.create({
-      data: {
-        clerkId: userId,
-        email,
-        name,
-        imageUrl: clerkUser.imageUrl,
-        plan: isOwner ? 'AGENCY' : 'FREE',
-        generationsLimit: isOwner ? 999999 : 3,
-        subscriptionStatus: isOwner ? 'active' : 'free',
-        referralCode: generateReferralCode(),
-      },
-    })
+
+    try {
+      // First try to find by email (handles old dev-instance records with different clerkId)
+      const existingByEmail = await prisma.user.findUnique({ where: { email } })
+      if (existingByEmail) {
+        // Update the old record with the new clerkId so it works going forward
+        await prisma.user.update({
+          where: { email },
+          data: {
+            clerkId: userId,
+            name: name ?? existingByEmail.name,
+            imageUrl: clerkUser.imageUrl ?? existingByEmail.imageUrl,
+            ...(isOwner ? { plan: 'AGENCY', generationsLimit: 999999, subscriptionStatus: 'active' } : {}),
+          },
+        })
+      } else {
+        await prisma.user.create({
+          data: {
+            clerkId: userId,
+            email,
+            name,
+            imageUrl: clerkUser.imageUrl,
+            plan: isOwner ? 'AGENCY' : 'FREE',
+            generationsLimit: isOwner ? 999999 : 3,
+            subscriptionStatus: isOwner ? 'active' : 'free',
+            referralCode: generateReferralCode(),
+          },
+        })
+      }
+    } catch {
+      // If create fails (race condition), the record exists — proceed
+    }
+
     user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { plan: true, email: true, isBanned: true },

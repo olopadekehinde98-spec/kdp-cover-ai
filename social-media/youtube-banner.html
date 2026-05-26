@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KDP Cover AI – YouTube Banner</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    gap: 16px;
+  }
+
+  .label {
+    color: #666;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Full banner canvas: 2560×1440 scaled down for preview ── */
+  .banner-wrap {
+    position: relative;
+    width: 1280px; /* 50% of 2560 */
+    height: 720px; /* 50% of 1440 */
+    overflow: hidden;
+    border: 2px solid #333;
+  }
+
+  .banner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: linear-gradient(135deg, #0f0c29 0%, #1a1040 40%, #0d1b2a 100%);
+    overflow: hidden;
+  }
+
+  /* Background grid */
+  .banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139,92,246,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,92,246,0.08) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+  }
+  .orb1 { width: 500px; height: 500px; background: #7c3aed; top: -150px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: #2563eb; bottom: -100px; right: 200px; }
+  .orb3 { width: 300px; height: 300px; background: #6d28d9; top: 200px; right: -50px; }
+
+  /* Safe zone overlay (1546×423 centred = 773×211.5 at 50%) */
+  .safe-zone {
+    position: absolute;
+    width: 773px;
+    height: 212px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1.5px dashed rgba(255,255,255,0.15);
+    border-radius: 4px;
+    pointer-events: none;
+  }
+
+  /* ── Main content (centred safe zone) ── */
+  .content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Mini book-cover stack (left side) */
+  .covers-group {
+    position: absolute;
+    left: 90px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: -8px;
+  }
+  .mini-cover {
+    width: 72px;
+    height: 108px;
+    border-radius: 4px;
+    border: 2px solid rgba(255,255,255,0.15);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .mini-cover:nth-child(1) {
+    background: linear-gradient(160deg, #1e1b4b, #312e81);
+    transform: rotate(-8deg) translateX(10px);
+    z-index: 1;
+  }
+  .mini-cover:nth-child(2) {
+    background: linear-gradient(160deg, #831843, #9f1239);
+    transform: rotate(-3deg) translateX(5px);
+    z-index: 2;
+  }
+  .mini-cover:nth-child(3) {
+    background: linear-gradient(160deg, #064e3b, #065f46);
+    transform: rotate(2deg);
+    z-index: 3;
+  }
+  .mini-cover:nth-child(4) {
+    background: linear-gradient(160deg, #1c1917, #292524);
+    transform: rotate(7deg) translateX(-5px);
+    z-index: 4;
+  }
+  .cover-line {
+    position: absolute;
+    bottom: 24px;
+    left: 8px;
+    right: 8px;
+    height: 3px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+  }
+  .cover-line2 {
+    position: absolute;
+    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+  }
+
+  /* Centre text */
+  .centre {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .badge {
+    background: rgba(139,92,246,0.2);
+    border: 1px solid rgba(139,92,246,0.5);
+    color: #a78bfa;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 100px;
+  }
+
+  .logo {
+    font-size: 52px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .logo span { color: #8b5cf6; }
+
+  .tagline {
+    font-size: 18px;
+    color: #94a3b8;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+  }
+
+  /* Feature pills */
+  .pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 4px;
+  }
+  .pill {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .pill-check { color: #4ade80; font-size: 10px; }
+
+  /* Right side — upload schedule */
+  .schedule {
+    position: absolute;
+    right: 90px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+  }
+  .schedule-label {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .schedule-day {
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .schedule-day span {
+    color: #8b5cf6;
+  }
+  .url {
+    margin-top: 16px;
+    color: #8b5cf6;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  /* KDP badge bottom */
+  .kdp-badge {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.4);
+    color: #34d399;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 20px;
+    border-radius: 100px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  /* ── Instructions ── */
+  .instructions {
+    background: #1a1a2e;
+    border: 1px solid #2d2d44;
+    border-radius: 12px;
+    padding: 20px 28px;
+    max-width: 700px;
+    color: #94a3b8;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .instructions h3 { color: #fff; font-size: 14px; margin-bottom: 10px; }
+  .instructions code {
+    background: rgba(139,92,246,0.15);
+    color: #a78bfa;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+  strong { color: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<p class="label">YouTube Channel Banner — 2560 × 1440px (shown at 50%)</p>
+
+<div class="banner-wrap">
+  <div class="banner">
+
+    <!-- Background effects -->
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+
+    <!-- Safe zone guide -->
+    <div class="safe-zone"></div>
+
+    <!-- Book cover stack (left) -->
+    <div class="covers-group">
+      <div class="mini-cover"><div class="cover-line"></div><div class="cover-line2"></div></div>
+      <div class="mini-cover"><div class="cover-line"></div><div class="cover-line2"></div></div>
+      <div class="mini-cover"><div class="cover-line"></div><div class="cover-line2"></div></div>
+      <div class="mini-cover"><div class="cover-line"></div><div class="cover-line2"></div></div>
+    </div>
+
+    <!-- Centre content -->
+    <div class="content">
+      <div class="centre">
+        <div class="badge">✦ AI-Powered Book Covers</div>
+        <div class="logo">KDP Cover <span>AI</span></div>
+        <div class="tagline">Generate professional book covers in 30 seconds</div>
+        <div class="pills">
+          <div class="pill"><span class="pill-check">✓</span> All KDP Trim Sizes</div>
+          <div class="pill"><span class="pill-check">✓</span> 300 DPI PDF Export</div>
+          <div class="pill"><span class="pill-check">✓</span> No Design Skills</div>
+          <div class="pill"><span class="pill-check">✓</span> Instant Activation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side -->
+    <div class="schedule">
+      <div class="schedule-label">New videos</div>
+      <div class="schedule-day"><span>Every Week</span></div>
+      <div class="schedule-day">KDP Tips & Tutorials</div>
+      <div class="url">kdpcoverai.site</div>
+    </div>
+
+    <!-- Bottom badge -->
+    <div class="kdp-badge">✦ Trusted by Self-Published Authors on Amazon KDP ✦</div>
+
+  </div>
+</div>
+
+<div class="instructions">
+  <h3>📸 How to export this as your YouTube banner</h3>
+  <ol>
+    <li><strong>Open this file in Chrome</strong> (double-click <code>youtube-banner.html</code>)</li>
+    <li>Press <strong>Win + Shift + S</strong> → select the banner area exactly</li>
+    <li>Paste into <strong>Paint</strong> or <strong>Snipping Tool</strong> → Save as PNG</li>
+    <li><strong>Resize to 2560×1440</strong> in any free tool: <code>canva.com</code> → resize → upload image → download</li>
+    <li>In YouTube Studio → <strong>Customization → Branding → Banner image → Upload</strong></li>
+  </ol>
+  <p style="margin-top:12px; color: #64748b;">
+    The dashed white rectangle shows YouTube's <strong>safe zone</strong> — everything inside is visible on all devices (TV, desktop, mobile). Your logo and tagline are centred inside it.
+  </p>
+</div>
+
+</body>
+</html>

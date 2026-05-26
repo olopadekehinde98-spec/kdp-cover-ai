@@ -34,7 +34,13 @@ export async function POST(req: NextRequest) {
 
   // Otherwise use Paddle portal
   if (!user.paddleCustomerId) {
-    return NextResponse.json({ error: 'No billing account found' }, { status: 404 })
+    // Manually-granted plans (owner/admin) have no billing portal
+    if (user.plan !== 'FREE') {
+      return NextResponse.json({
+        error: 'Your plan is managed directly. No billing portal is available. Contact support@kdpcoverai.com if you need help.',
+      }, { status: 200 })
+    }
+    return NextResponse.json({ error: 'No billing account found. Please subscribe via the Pricing page.' }, { status: 404 })
   }
 
   try {

@@ -1,0 +1,33 @@
+HOW TO TURN THESE INTO INSTAGRAM POSTS
+=======================================
+
+STEP 1 — Open the file
+  Double-click day5-carousel.html OR day12-carousel.html
+  It opens in your browser (Chrome/Edge)
+
+STEP 2 — Screenshot each slide
+  Press: Windows key + Shift + S
+  This opens the Snipping Tool
+  Draw a box around each slide (540x540 square)
+  It saves to your clipboard automatically
+
+STEP 3 — Save each screenshot
+  Open Paint (search in Start Menu)
+  Press Ctrl+V to paste
+  Press Ctrl+S to save as PNG
+  Name them: slide1.png, slide2.png, etc.
+
+STEP 4 — Post to Instagram
+  Open Instagram on your phone
+  Create a new post
+  Select all slides in order (tap the stack icon)
+  Add the caption from the 30-day plan
+  Post!
+
+TIP: Instagram carousel = swipe-able post
+     Upload slide1 first, then slide2, slide3...
+     Up to 10 slides per post
+
+FILES:
+  day5-carousel.html  = "5 KDP Mistakes" (7 slides) — Post on Day 5
+  day12-carousel.html = "KDP Checklist" (9 slides)  — Post on Day 12
