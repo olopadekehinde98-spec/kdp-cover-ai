@@ -26,35 +26,42 @@ function headers() {
 
 export const PLANS = {
   STARTER: {
-    id: () => {
-      const id = process.env.FLW_PLAN_STARTER
-      if (!id) throw new Error('FLW_PLAN_STARTER env var is not set')
+    id: (currency: 'USD' | 'NGN' = 'USD') => {
+      const id = currency === 'NGN'
+        ? process.env.FLW_PLAN_STARTER_NGN
+        : process.env.FLW_PLAN_STARTER
+      if (!id) throw new Error(`FLW_PLAN_STARTER${currency === 'NGN' ? '_NGN' : ''} env var is not set`)
       return id
     },
-    amount: 10,
+    amount: { USD: 10, NGN: 13700 },
     name: 'Starter',
   },
   PRO: {
-    id: () => {
-      const id = process.env.FLW_PLAN_PRO
-      if (!id) throw new Error('FLW_PLAN_PRO env var is not set')
+    id: (currency: 'USD' | 'NGN' = 'USD') => {
+      const id = currency === 'NGN'
+        ? process.env.FLW_PLAN_PRO_NGN
+        : process.env.FLW_PLAN_PRO
+      if (!id) throw new Error(`FLW_PLAN_PRO${currency === 'NGN' ? '_NGN' : ''} env var is not set`)
       return id
     },
-    amount: 30,
+    amount: { USD: 30, NGN: 41100 },
     name: 'Pro',
   },
   AGENCY: {
-    id: () => {
-      const id = process.env.FLW_PLAN_AGENCY
-      if (!id) throw new Error('FLW_PLAN_AGENCY env var is not set')
+    id: (currency: 'USD' | 'NGN' = 'USD') => {
+      const id = currency === 'NGN'
+        ? process.env.FLW_PLAN_AGENCY_NGN
+        : process.env.FLW_PLAN_AGENCY
+      if (!id) throw new Error(`FLW_PLAN_AGENCY${currency === 'NGN' ? '_NGN' : ''} env var is not set`)
       return id
     },
-    amount: 80,
+    amount: { USD: 80, NGN: 109600 },
     name: 'Agency',
   },
 } as const
 
 export type PlanKey = keyof typeof PLANS
+export type Currency = 'USD' | 'NGN'
 
 /**
  * Create a Flutterwave payment link for a subscription plan.
@@ -65,9 +72,10 @@ export async function createCheckoutUrl(
   email: string,
   userId: string,
   userName: string,
+  currency: Currency = 'USD',
 ): Promise<string> {
   const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? ''
-  const planId  = PLANS[plan].id()
+  const planId  = PLANS[plan].id(currency)
   const txRef   = `kdp-${userId}-${Date.now()}`
 
   const res = await fetch(`${BASE}/payments`, {
@@ -75,8 +83,8 @@ export async function createCheckoutUrl(
     headers: headers(),
     body: JSON.stringify({
       tx_ref:           txRef,
-      amount:           PLANS[plan].amount,
-      currency:         'USD',
+      amount:           PLANS[plan].amount[currency],
+      currency,
       redirect_url:     `${appUrl}/dashboard?payment=success`,
       payment_options:  'card',
       customer: {
@@ -87,6 +95,7 @@ export async function createCheckoutUrl(
       meta: {
         userId,
         plan,
+        currency,
       },
       customizations: {
         title:       'KDP Cover AI',

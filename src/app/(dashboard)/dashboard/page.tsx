@@ -6,6 +6,7 @@ import CoverGrid from '@/components/CoverGrid'
 import ReferralCard from '@/components/ReferralCard'
 import RefApply from '@/components/RefApply'
 import BillingPortalButton from '@/components/BillingPortalButton'
+import GoogleReviewBanner from '@/components/GoogleReviewBanner'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -45,10 +46,18 @@ export default async function DashboardPage() {
 
   const clerkUser = await currentUser()
 
+  const hasCovers = user.covers.length > 0
+  const latestCoverId = user.covers[0]?.id
+
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Auto-apply referral code captured at sign-up */}
       <RefApply />
+
+      {/* Google review banner — show if user has covers and hasn't rated yet */}
+      {hasCovers && !user.hasRated && (
+        <GoogleReviewBanner latestCoverId={latestCoverId} />
+      )}
 
       <div className="max-w-6xl mx-auto px-6 py-10">
         {/* Welcome */}

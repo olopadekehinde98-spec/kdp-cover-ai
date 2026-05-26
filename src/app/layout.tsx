@@ -5,6 +5,7 @@ import Script from 'next/script'
 import { Suspense } from 'react'
 import SupportChatBot from '@/components/SupportChatBot'
 import ReferralCapture from '@/components/ReferralCapture'
+import SignupPopup from '@/components/SignupPopup'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -123,6 +124,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} bg-gray-950 text-white antialiased min-h-screen`}>
         <Suspense fallback={null}>
           <ReferralCapture />
+        </Suspense>
+        <Suspense fallback={null}>
+          <SignupPopup />
         </Suspense>
         {children}
         <SupportChatBot />

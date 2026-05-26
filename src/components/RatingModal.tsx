@@ -5,9 +5,12 @@ import { useState } from 'react'
 interface RatingModalProps {
   coverId: string
   onClose: () => void
+  googleReviewUrl?: string
 }
 
-export default function RatingModal({ coverId, onClose }: RatingModalProps) {
+const DEFAULT_GOOGLE_URL = process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL ?? 'https://g.page/r/kdpcoverai/review'
+
+export default function RatingModal({ coverId, onClose, googleReviewUrl = DEFAULT_GOOGLE_URL }: RatingModalProps) {
   const [rating, setRating] = useState(0)
   const [hovered, setHovered] = useState(0)
   const [comment, setComment] = useState('')
@@ -91,13 +94,16 @@ export default function RatingModal({ coverId, onClose }: RatingModalProps) {
               Your feedback helps us improve KDP Cover AI.
             </p>
             <a
-              href="https://search.google.com/local/writereview?placeid=kdpcoverai"
+              href={googleReviewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition mb-3"
+              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black font-bold px-5 py-2.5 rounded-xl text-sm transition mb-3"
             >
-              ⭐ Leave us a Google Review
+              ⭐ Leave a Google Review
             </a>
+            <p className="text-gray-500 text-xs mb-3">
+              Takes 30 seconds · Helps other authors find us
+            </p>
             <br />
             <button
               onClick={onClose}
