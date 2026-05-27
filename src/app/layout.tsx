@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
-import Script from 'next/script'
 import { Suspense } from 'react'
 import SupportChatBot from '@/components/SupportChatBot'
 import ReferralCapture from '@/components/ReferralCapture'
@@ -110,7 +109,7 @@ const jsonLd = {
 }
 
 const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-const gaId = process.env.NEXT_PUBLIC_GA_ID
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ''
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const content = (
@@ -120,6 +119,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {/* Google Analytics — inline in <head> so it fires before page renders */}
+        {GA_ID && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:true});`,
+              }}
+            />
+          </>
+        )}
       </head>
       <body className={`${inter.className} bg-gray-950 text-white antialiased min-h-screen`}>
         <Suspense fallback={null}>
@@ -130,17 +140,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Suspense>
         {children}
         <SupportChatBot />
-        {gaId && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga-init" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}',{send_page_view:true});`}
-            </Script>
-          </>
-        )}
       </body>
     </html>
   )
