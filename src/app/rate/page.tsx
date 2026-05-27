@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const GOOGLE_REVIEW_URL = 'https://search.google.com/local/writereview?placeid=kdpcoverai'
+const GOOGLE_REVIEW_URL = 'https://www.google.com/search?q=KDP+Cover+AI+kdpcoverai.site+review'
 
 export default function RatePage() {
   const [rating, setRating] = useState(0)
