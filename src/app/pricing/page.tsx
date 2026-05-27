@@ -69,10 +69,8 @@ const NGN_PRICES: Record<string, number> = {
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
-  // 'flutterwave' = card via Flutterwave, 'transfer' = bank transfer fallback
-  const [provider, setProvider] = useState<'flutterwave' | 'transfer'>('flutterwave')
-  // USD settles as NGN to OPay via Flutterwave auto-conversion
-  const [currency, setCurrency] = useState<'USD' | 'NGN'>('USD')
+  // 'paystack' = card via Paystack (NGN), 'transfer' = bank transfer fallback
+  const [provider, setProvider] = useState<'paystack' | 'transfer'>('paystack')
 
   async function handleSubscribe(plan: string) {
     // Bank transfer: scroll to payment section
@@ -81,13 +79,13 @@ export default function PricingPage() {
       return
     }
 
-    // Flutterwave card checkout
+    // Paystack card checkout (NGN)
     setLoading(plan)
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, provider: 'flutterwave', currency }),
+        body: JSON.stringify({ plan, provider: 'paystack', currency: 'NGN' }),
       })
       const data = await res.json()
       if (data.url) {
@@ -122,9 +120,9 @@ export default function PricingPage() {
         <div className="flex flex-col items-center gap-3 mb-6">
           <div className="inline-flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-2xl p-1.5">
             <button
-              onClick={() => setProvider('flutterwave')}
+              onClick={() => setProvider('paystack')}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
-                provider === 'flutterwave'
+                provider === 'paystack'
                   ? 'bg-violet-700 text-white shadow'
                   : 'text-gray-400 hover:text-white'
               }`}
@@ -142,42 +140,11 @@ export default function PricingPage() {
               🏦 Bank Transfer
             </button>
           </div>
-
-          {/* Currency toggle — shown only for card payments */}
-          {provider === 'flutterwave' && (
-            <div className="inline-flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
-              <button
-                onClick={() => setCurrency('USD')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  currency === 'USD'
-                    ? 'bg-blue-700 text-white shadow'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                🌍 Pay in USD
-              </button>
-              <button
-                onClick={() => setCurrency('NGN')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  currency === 'NGN'
-                    ? 'bg-green-700 text-white shadow'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                🇳🇬 Pay in NGN (₦)
-              </button>
-            </div>
-          )}
         </div>
 
-        {provider === 'flutterwave' && currency === 'USD' && (
+        {provider === 'paystack' && (
           <p className="text-center text-xs text-gray-500 mb-8">
-            USD card payment · Visa, Mastercard · International customers · Instant activation
-          </p>
-        )}
-        {provider === 'flutterwave' && currency === 'NGN' && (
-          <p className="text-center text-xs text-gray-500 mb-8">
-            NGN card payment · Verve, Mastercard, Visa · Nigerian customers · Instant activation
+            🇳🇬 NGN card payment · Verve, Mastercard, Visa · Powered by Paystack · Instant activation
           </p>
         )}
         {provider === 'transfer' && (
@@ -211,21 +178,19 @@ export default function PricingPage() {
               </div>
 
               <div className="mb-6">
-                {provider === 'flutterwave' && currency === 'NGN' ? (
+                {provider === 'transfer' ? (
+                  <>
+                    <span className="text-4xl font-bold text-white">${plan.price}</span>
+                    <span className="text-gray-500 text-sm">/month</span>
+                    <div className="text-green-400 text-sm font-medium mt-1">
+                      ≈ ₦{NGN_PRICES[plan.key].toLocaleString()} / month
+                    </div>
+                  </>
+                ) : (
                   <>
                     <span className="text-4xl font-bold text-white">₦{NGN_PRICES[plan.key].toLocaleString()}</span>
                     <span className="text-gray-500 text-sm">/month</span>
                     <div className="text-gray-500 text-xs mt-1">≈ ${plan.price} USD</div>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-4xl font-bold text-white">${plan.price}</span>
-                    <span className="text-gray-500 text-sm">/month</span>
-                    {provider === 'transfer' && (
-                      <div className="text-green-400 text-sm font-medium mt-1">
-                        ≈ ₦{NGN_PRICES[plan.key].toLocaleString()} / month
-                      </div>
-                    )}
                   </>
                 )}
               </div>
@@ -250,9 +215,7 @@ export default function PricingPage() {
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing...</>
                 ) : provider === 'transfer'
                   ? `🏦 Pay by Transfer — ${plan.cta}`
-                  : currency === 'NGN'
-                  ? `💳 ${plan.cta} in ₦`
-                  : `💳 ${plan.cta}`}
+                  : `💳 ${plan.cta} in ₦`}
               </button>
             </div>
           ))}

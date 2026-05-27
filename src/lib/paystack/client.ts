@@ -30,7 +30,7 @@ export const PLANS = {
       if (!c) throw new Error('PAYSTACK_PLAN_STARTER env var is not set')
       return c
     },
-    amount: 900,   // in USD cents — $9.00
+    amount: 1370000, // ₦13,700 in kobo
     name: 'Starter',
   },
   PRO: {
@@ -39,7 +39,7 @@ export const PLANS = {
       if (!c) throw new Error('PAYSTACK_PLAN_PRO env var is not set')
       return c
     },
-    amount: 2900,
+    amount: 4110000, // ₦41,100 in kobo
     name: 'Pro',
   },
   AGENCY: {
@@ -48,7 +48,7 @@ export const PLANS = {
       if (!c) throw new Error('PAYSTACK_PLAN_AGENCY env var is not set')
       return c
     },
-    amount: 7900,
+    amount: 10960000, // ₦109,600 in kobo
     name: 'Agency',
   },
 } as const
@@ -73,7 +73,7 @@ export async function createCheckoutUrl(
     body: JSON.stringify({
       email,
       amount: PLANS[plan].amount,   // Paystack uses kobo/cents — $9 = 900 cents
-      currency: 'USD',
+      currency: 'NGN',
       plan: planCode,
       callback_url: `${appUrl}/dashboard?payment=success`,
       metadata: {

@@ -6,7 +6,7 @@ import { type PlanKey as PaddlePlanKey } from '@/lib/paddle/client'
 
 const schema = z.object({
   plan: z.enum(['STARTER', 'PRO', 'AGENCY']),
-  provider: z.enum(['paddle', 'flutterwave']).optional(),
+  provider: z.enum(['paddle', 'flutterwave', 'paystack']).optional(),
   currency: z.enum(['USD', 'NGN']).optional(),
 })
 
@@ -21,10 +21,14 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  const { plan, provider = 'flutterwave', currency = 'USD' } = parsed.data
+  const { plan, provider = 'paystack', currency = 'NGN' } = parsed.data
 
   try {
-    if (provider === 'flutterwave') {
+    if (provider === 'paystack') {
+      const { createCheckoutUrl } = await import('@/lib/paystack/client')
+      const url = await createCheckoutUrl(plan, user.email, user.id)
+      return NextResponse.json({ url })
+    } else if (provider === 'flutterwave') {
       const { createCheckoutUrl } = await import('@/lib/flutterwave/client')
       const url = await createCheckoutUrl(plan, user.email, user.id, user.name ?? user.email, currency)
       return NextResponse.json({ url })
