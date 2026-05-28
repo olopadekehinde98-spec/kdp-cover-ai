@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma db push --accept-data-loss && prisma generate && next build",
     "db:push": "prisma db push --accept-data-loss",
     "start": "next start",
     "lint": "eslint",
@@ -45,6 +45,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "replicate": "^1.4.0",
+    "resend": "^6.12.4",
     "sharp": "^0.34.5",
     "stripe": "^22.1.1",
     "svix": "^1.93.0",

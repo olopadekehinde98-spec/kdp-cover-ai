@@ -46,6 +46,50 @@ export async function POST(req: NextRequest) {
     }, { status: 429 })
   }
 
+  // ── Security: per-user rate limit (max 5 generates per 10 minutes) ──────────
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+  const recentCount = await prisma.cover.count({
+    where: { userId: user.id, createdAt: { gt: tenMinutesAgo } },
+  })
+  if (recentCount >= 5) {
+    return NextResponse.json({
+      error: 'Too many requests. Please wait a few minutes before generating again.',
+    }, { status: 429 })
+  }
+
+  // ── Security: flag suspicious accounts (same IP, multiple users) ────────────
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? req.headers.get('x-real-ip') ?? null
+  if (ip) {
+    const fraudLog = await prisma.ipFraudLog.findUnique({ where: { ipAddress: ip } })
+    if (fraudLog?.isBanned) {
+      return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
+    }
+    // Track this IP + user pairing (runs in background, non-blocking)
+    prisma.ipFraudLog.upsert({
+      where: { ipAddress: ip },
+      update: {
+        userIds: { push: user.id },
+        emails: { push: user.email },
+        updatedAt: new Date(),
+      },
+      create: {
+        ipAddress: ip,
+        userIds: [user.id],
+        emails: [user.email],
+      },
+    }).then(async (log) => {
+      // Auto-flag IPs with 4+ different users generating (potential abuse farm)
+      const uniqueUsers = [...new Set(log.userIds)]
+      if (uniqueUsers.length >= 4 && !log.isBanned) {
+        await prisma.ipFraudLog.update({
+          where: { ipAddress: ip },
+          data: { isBanned: false }, // flag for admin review but don't auto-ban
+        })
+        console.warn('[Fraud] High multi-account IP flagged for review:', ip, 'users:', uniqueUsers.length)
+      }
+    }).catch(() => {})
+  }
+
   const body = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {

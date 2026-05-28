@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Webhook } from 'svix'
 import { prisma } from '@/lib/db/prisma'
+import { sendEmail, welcomeEmail } from '@/lib/email/resend'
 
 /** Generate a unique referral code like KDP-X7K2M9 */
 function generateReferralCode(): string {
@@ -82,6 +83,15 @@ export async function POST(req: NextRequest) {
           referralCode,
         },
       })
+
+      // Send welcome email to every new signup (non-blocking)
+      if (email && !isOwner) {
+        sendEmail({
+          to: email,
+          subject: 'Welcome to KDP Cover AI 🎉 — Your first cover is waiting',
+          html: welcomeEmail(name?.split(' ')[0] ?? 'there'),
+        }).catch(() => {}) // fire-and-forget
+      }
     }
   }
 

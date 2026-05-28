@@ -51,6 +51,8 @@ model User {
   isAdmin              Boolean  @default(false)
   ipAddress            String?
   lastSeenAt           DateTime?
+  newsletterOptIn      Boolean  @default(true)
+  lastNewsletterAt     DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -294,4 +296,18 @@ enum SubmissionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// Email capture for non-signed-in visitors (legal opt-in only)
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  source      String   @default("homepage-popup") // where they signed up
+  confirmed   Boolean  @default(false)   // double opt-in via confirm link
+  token       String   @unique           // for confirm / unsubscribe links
+  lastSentAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([confirmed])
+  @@index([email])
 }

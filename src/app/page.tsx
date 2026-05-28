@@ -3,6 +3,7 @@ import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import LiveStats from '@/components/LiveStats'
 import CoverGallery from '@/components/CoverGallery'
+import EmailCapturePopup from '@/components/EmailCapturePopup'
 
 const FEATURES = [
   {
@@ -52,6 +53,7 @@ const TESTIMONIALS = [
 
 export default function LandingPage() {
   return (
+    <>
     <div className="min-h-screen bg-gray-950 text-white">
       <SiteHeader />
 
@@ -230,5 +232,7 @@ export default function LandingPage() {
 
       <SiteFooter />
     </div>
+    <EmailCapturePopup />
+    </>
   )
 }
