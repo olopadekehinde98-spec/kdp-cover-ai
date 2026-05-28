@@ -37,6 +37,50 @@ const FONT_SCALE_LABELS: Record<string, string> = {
   '0.6': 'Small', '0.8': 'Medium-Small', '1.0': 'Medium (default)', '1.2': 'Large', '1.4': 'Extra Large',
 }
 
+// ── Cover Style Templates ─────────────────────────────────────
+const STYLE_TEMPLATES = [
+  {
+    id: 'dark-thriller', emoji: '🔪', name: 'Dark Thriller', color: 'red',
+    prompt: 'Dark psychological thriller, cinematic red neon smoke, lone silhouette in the rain, gritty city streets',
+    titleStyle: 'bold-sans' as const, titleFontScale: 1.2, genre: 'thriller',
+  },
+  {
+    id: 'romance-warm', emoji: '💕', name: 'Romance Warm', color: 'pink',
+    prompt: 'Romantic sunset beach, warm golden bokeh, soft pink clouds, couple silhouette in golden hour light',
+    titleStyle: 'serif-italic' as const, titleFontScale: 1.0, genre: 'romance',
+  },
+  {
+    id: 'epic-fantasy', emoji: '🧙', name: 'Epic Fantasy', color: 'violet',
+    prompt: 'Epic fantasy landscape, towering ancient ruins, glowing magical runes, misty mountains, dramatic golden light rays',
+    titleStyle: 'serif' as const, titleFontScale: 1.2, genre: 'fantasy',
+  },
+  {
+    id: 'clean-business', emoji: '📈', name: 'Clean Business', color: 'blue',
+    prompt: 'Minimalist business background, bold geometric shapes, deep navy blue gradient, subtle gold accent lines',
+    titleStyle: 'bold-sans' as const, titleFontScale: 1.0, genre: 'business',
+  },
+  {
+    id: 'horror-dark', emoji: '👻', name: 'Horror Dark', color: 'gray',
+    prompt: 'Gothic horror, abandoned mansion, dead twisted bare trees, full moon through storm clouds, blood-red ground mist',
+    titleStyle: 'courier-bold' as const, titleFontScale: 1.2, genre: 'horror',
+  },
+  {
+    id: 'sci-fi-future', emoji: '🚀', name: 'Sci-Fi Future', color: 'cyan',
+    prompt: 'Futuristic sci-fi deep space, glowing nebula, spacecraft silhouette, alien planet surface, electric blue energy arcs',
+    titleStyle: 'sans-oblique' as const, titleFontScale: 1.0, genre: 'sci-fi',
+  },
+  {
+    id: 'self-help-bright', emoji: '🌟', name: 'Self-Help', color: 'amber',
+    prompt: 'Motivational sunrise, radiant golden light breaking through clouds, silhouette on mountaintop, vast open sky',
+    titleStyle: 'bold-sans' as const, titleFontScale: 1.0, genre: 'self-help',
+  },
+  {
+    id: 'literary-elegant', emoji: '📚', name: 'Literary', color: 'amber',
+    prompt: 'Elegant vintage library, soft candlelight on ancient books, dust motes in warm golden light, rich deep tones',
+    titleStyle: 'serif-light' as const, titleFontScale: 0.8, genre: 'literary-fiction',
+  },
+]
+
 type Method = 'ai' | 'upload' | 'kdp' | 'book'
 type TitleStyle = 'bold-sans' | 'serif' | 'serif-italic' | 'sans-oblique' | 'courier-bold' | 'serif-light'
 
@@ -335,6 +379,9 @@ function GeneratePage() {
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingCoverId, setRatingCoverId] = useState('')
   const [editOpen, setEditOpen] = useState(false)
+  const [regenOpen, setRegenOpen] = useState(false)
+  const [showShareMenu, setShowShareMenu] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
 
   async function handleAIDescription() {
     if (!form.title || !form.genre) { setAiDescError('Enter a title and genre first.'); return }
@@ -371,7 +418,7 @@ function GeneratePage() {
     } catch {}
   }
 
-  async function handleExport(format: 'pdf' | 'png' | 'jpg' = 'pdf') {
+  async function handleExport(format: 'pdf' | 'png' | 'jpg' | 'front' | 'back' | 'spine' = 'pdf') {
     if (!result?.coverId) return
     setExportingFormat(format); setError('')
     try {
@@ -404,7 +451,8 @@ function GeneratePage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url
       const ext = format === 'pdf' ? 'pdf' : format === 'jpg' ? 'jpg' : 'png'
-      a.download = `${form.title || 'cover'}-kdp-cover.${ext}`
+      const suffix = format === 'front' ? '-front-cover' : format === 'back' ? '-back-cover' : format === 'spine' ? '-spine' : '-kdp-cover'
+      a.download = `${form.title || 'cover'}${suffix}.${ext}`
       a.click(); URL.revokeObjectURL(url)
     } catch (e: any) { setError(e.message) }
     finally { setExportingFormat(null) }
@@ -868,15 +916,49 @@ function GeneratePage() {
         {step === 3 && isAIMode && (
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6 space-y-5">
             <h2 className="text-xl font-semibold text-white">Describe Your Cover</h2>
-            <p className="text-gray-400 text-sm">Describe the visual style — AI enhances and generates the background image.</p>
+            <p className="text-gray-400 text-sm">Pick a style template to start, or describe your own vision below.</p>
 
-            <div className="space-y-1 mb-2">
+            {/* ── Style Templates ─────────────────────────────── */}
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">Quick Style Templates</p>
+              <div className="grid grid-cols-2 gap-2">
+                {STYLE_TEMPLATES.map(t => {
+                  const isActive = form.prompt === t.prompt
+                  const borderColor: Record<string, string> = {
+                    red: isActive ? 'border-red-500 bg-red-950/40' : 'border-gray-700 hover:border-red-700',
+                    pink: isActive ? 'border-pink-500 bg-pink-950/40' : 'border-gray-700 hover:border-pink-700',
+                    violet: isActive ? 'border-violet-500 bg-violet-950/40' : 'border-gray-700 hover:border-violet-700',
+                    blue: isActive ? 'border-blue-500 bg-blue-950/40' : 'border-gray-700 hover:border-blue-700',
+                    gray: isActive ? 'border-gray-400 bg-gray-800' : 'border-gray-700 hover:border-gray-500',
+                    cyan: isActive ? 'border-cyan-500 bg-cyan-950/40' : 'border-gray-700 hover:border-cyan-700',
+                    amber: isActive ? 'border-amber-500 bg-amber-950/40' : 'border-gray-700 hover:border-amber-700',
+                  }
+                  return (
+                    <button key={t.id}
+                      onClick={() => {
+                        update('prompt', t.prompt)
+                        update('titleStyle', t.titleStyle)
+                        update('titleFontScale', t.titleFontScale)
+                        update('genre', t.genre)
+                      }}
+                      className={`p-3 rounded-xl border bg-gray-800 text-left transition flex items-center gap-2.5 ${borderColor[t.color] ?? borderColor.gray}`}>
+                      <span className="text-xl shrink-0">{t.emoji}</span>
+                      <div className="min-w-0">
+                        <div className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-gray-300'}`}>{t.name}</div>
+                      </div>
+                      {isActive && <span className="ml-auto text-green-400 text-xs shrink-0">✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500 mb-1">Or use a custom example:</p>
               {[
                 'Dark psychological thriller with cinematic red smoke and a lone female silhouette',
                 'Epic fantasy with a glowing ancient map, misty mountains, and dramatic golden light',
                 'Clean modern business book with bold geometric shapes and deep navy blue',
-                'Romantic sunset beach scene with warm golden tones and soft bokeh',
-                'Dark horror with abandoned mansion, full moon, and twisted bare trees',
               ].map(ex => (
                 <button key={ex} onClick={() => update('prompt', ex)}
                   className="w-full text-left text-xs text-gray-400 hover:text-violet-300 p-2 rounded-lg hover:bg-gray-800 transition border border-transparent hover:border-gray-700">
@@ -1075,6 +1157,61 @@ function GeneratePage() {
             </div>
           )}
 
+          {/* ── New Background Image panel ── */}
+          {(method === 'ai' || kdpDesign === 'ai' || bookDesign === 'ai') && (
+            <div className="mb-3">
+              <button
+                onClick={() => setRegenOpen(v => !v)}
+                className="w-full flex items-center justify-between bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-xl px-4 py-3 text-sm font-semibold text-white transition"
+              >
+                <span>🎨 New Background Image</span>
+                <span className="text-gray-400 text-xs">{regenOpen ? '▲ Hide' : '▼ Show'}</span>
+              </button>
+
+              {regenOpen && (
+                <div className="mt-3 bg-gray-800/60 border border-gray-700 rounded-xl p-5 space-y-4">
+                  <p className="text-xs text-gray-500">Keep your text &amp; settings — just regenerate the background image with a new style.</p>
+
+                  {/* Quick style chips */}
+                  <div>
+                    <p className="text-xs text-gray-400 mb-2">Quick style switch:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {STYLE_TEMPLATES.map(t => (
+                        <button key={t.id}
+                          onClick={() => {
+                            update('prompt', t.prompt)
+                            update('titleStyle', t.titleStyle)
+                            update('titleFontScale', t.titleFontScale)
+                          }}
+                          className={`p-2 rounded-lg border text-left text-xs flex items-center gap-2 transition
+                            ${form.prompt === t.prompt
+                              ? 'border-violet-500 bg-violet-900/30 text-violet-300'
+                              : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                          <span>{t.emoji}</span><span>{t.name}</span>
+                          {form.prompt === t.prompt && <span className="ml-auto text-green-400">✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-2">Or write your own prompt:</label>
+                    <textarea value={form.prompt} onChange={e => update('prompt', e.target.value)}
+                      rows={3} placeholder="Describe the new background style..."
+                      className={inp('resize-none text-sm')} />
+                  </div>
+
+                  <button
+                    onClick={async () => { setRegenOpen(false); await handleGenerateAI() }}
+                    disabled={loading || !form.prompt}
+                    className="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                    {loading ? <><Spinner />Generating new background...</> : '✨ Generate New Background'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Edit Cover Text panel ── */}
           <div className="mb-5">
             <button
@@ -1242,18 +1379,24 @@ function GeneratePage() {
           {/* Download format buttons */}
           <div className="space-y-3">
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Download Format</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button onClick={() => handleExport('pdf')} disabled={!!exportingFormat}
                 className="flex flex-col items-center gap-1.5 bg-green-900/40 hover:bg-green-800/50 border border-green-700/50 disabled:opacity-50 text-green-300 font-bold py-4 rounded-xl transition">
                 {exportingFormat === 'pdf' ? <Spinner /> : <span className="text-2xl">📄</span>}
                 <span className="text-xs">KDP PDF</span>
-                <span className="text-xs text-green-500 font-normal">Print-ready</span>
+                <span className="text-xs text-green-500 font-normal">Full-wrap · Print-ready</span>
+              </button>
+              <button onClick={() => handleExport('front')} disabled={!!exportingFormat}
+                className="flex flex-col items-center gap-1.5 bg-amber-900/40 hover:bg-amber-800/50 border border-amber-700/50 disabled:opacity-50 text-amber-300 font-bold py-4 rounded-xl transition">
+                {exportingFormat === 'front' ? <Spinner /> : <span className="text-2xl">📱</span>}
+                <span className="text-xs">Front Cover</span>
+                <span className="text-xs text-amber-500 font-normal">Amazon thumbnail</span>
               </button>
               <button onClick={() => handleExport('png')} disabled={!!exportingFormat}
                 className="flex flex-col items-center gap-1.5 bg-blue-900/40 hover:bg-blue-800/50 border border-blue-700/50 disabled:opacity-50 text-blue-300 font-bold py-4 rounded-xl transition">
                 {exportingFormat === 'png' ? <Spinner /> : <span className="text-2xl">🖼️</span>}
-                <span className="text-xs">PNG Image</span>
-                <span className="text-xs text-blue-500 font-normal">High-res</span>
+                <span className="text-xs">Full-Wrap PNG</span>
+                <span className="text-xs text-blue-500 font-normal">Social · mockups</span>
               </button>
               <button onClick={() => handleExport('jpg')} disabled={!!exportingFormat}
                 className="flex flex-col items-center gap-1.5 bg-violet-900/40 hover:bg-violet-800/50 border border-violet-700/50 disabled:opacity-50 text-violet-300 font-bold py-4 rounded-xl transition">
@@ -1262,19 +1405,68 @@ function GeneratePage() {
                 <span className="text-xs text-violet-500 font-normal">Smaller file</span>
               </button>
             </div>
-            <p className="text-xs text-gray-600">PDF = for KDP upload · PNG/JPG = for social media, mockups, or editing</p>
+            <p className="text-xs text-gray-600">KDP PDF = for upload to Amazon · Front Cover PNG = for Amazon listing thumbnail</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-2">
             <button onClick={() => { setStep(3); setResult(null) }}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 rounded-xl transition">
-              🔄 Regenerate
+              🔄 Full Regenerate
             </button>
             <button onClick={() => router.push('/dashboard')}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-3 rounded-xl transition">
               Dashboard
             </button>
           </div>
+
+          {/* ── Share Cover ──────────────────────────────────── */}
+          <div className="relative mt-3">
+            <button
+              onClick={async () => {
+                const shareText = `Just created my KDP book cover for "${form.title}" — check out KDP Cover AI!`
+                const shareUrl  = 'https://kdpcoverai.site'
+                if (typeof navigator !== 'undefined' && navigator.share) {
+                  try { await navigator.share({ title: form.title, text: shareText, url: shareUrl }) } catch {}
+                } else {
+                  setShowShareMenu(v => !v)
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-indigo-900/30 hover:bg-indigo-800/40 border border-indigo-700/50 text-indigo-300 font-semibold py-2.5 rounded-xl transition text-sm"
+            >
+              📤 Share Your Cover
+            </button>
+
+            {showShareMenu && (
+              <div className="absolute bottom-full mb-2 left-0 right-0 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl p-3 z-20 space-y-2">
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2">Share via</p>
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just created my KDP book cover for "${form.title}" with @kdpcoverai 🎨`)}&url=${encodeURIComponent('https://kdpcoverai.site')}`}
+                  target="_blank" rel="noopener noreferrer"
+                  onClick={() => setShowShareMenu(false)}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm transition">
+                  𝕏 &nbsp;Share on X / Twitter
+                </a>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Just created my KDP book cover for "${form.title}" with KDP Cover AI 🎨 https://kdpcoverai.site`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  onClick={() => setShowShareMenu(false)}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm transition">
+                  💬 &nbsp;Share on WhatsApp
+                </a>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText('https://kdpcoverai.site')
+                    setShareCopied(true)
+                    setTimeout(() => { setShareCopied(false); setShowShareMenu(false) }, 1800)
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm transition text-left">
+                  {shareCopied ? '✅ Link Copied!' : '🔗 Copy Link'}
+                </button>
+                <button onClick={() => setShowShareMenu(false)} className="w-full text-xs text-gray-600 hover:text-gray-400 py-1 transition">✕ Close</button>
+              </div>
+            )}
+          </div>
+
           <a
             href="https://g.page/r/kdpcoverai/review"
             target="_blank"
