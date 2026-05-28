@@ -20,6 +20,12 @@ const schema = z.object({
   spineWidthOverride: z.number().min(0.06).max(3).optional(),
   reviewQuote: z.string().max(300).optional(),
   reviewAttribution: z.string().max(100).optional(),
+  // Text overrides — allow user edits from the result screen to be exported
+  titleOverride: z.string().max(200).optional(),
+  subtitleOverride: z.string().max(300).optional(),
+  authorNameOverride: z.string().max(200).optional(),
+  descriptionOverride: z.string().max(3000).optional(),
+  authorBioOverride: z.string().max(1000).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -51,17 +57,24 @@ export async function POST(req: NextRequest) {
     }
     const dims = calculateKDPDimensions(kdpInput, parsed.data.spineWidthOverride)
 
+    // Apply any user edits from the result screen (text overrides take precedence over DB values)
+    const exportTitle       = parsed.data.titleOverride       ?? cover.title
+    const exportSubtitle    = parsed.data.subtitleOverride    ?? cover.subtitle   ?? undefined
+    const exportAuthorName  = parsed.data.authorNameOverride  ?? cover.authorName
+    const exportDescription = parsed.data.descriptionOverride ?? cover.description ?? ''
+    const exportAuthorBio   = parsed.data.authorBioOverride   ?? cover.authorBio  ?? undefined
+
     const typography = buildTypographyLayout({
-      title: cover.title,
-      subtitle: cover.subtitle ?? undefined,
-      authorName: cover.authorName,
+      title: exportTitle,
+      subtitle: exportSubtitle,
+      authorName: exportAuthorName,
       genre: cover.genre as any,
       dims,
     })
 
     const backCover = buildBackCoverLayout({
-      description: cover.description ?? '',
-      authorBio: cover.authorBio ?? undefined,
+      description: exportDescription,
+      authorBio: exportAuthorBio,
       genre: cover.genre as any,
       dims,
     })
@@ -71,11 +84,11 @@ export async function POST(req: NextRequest) {
       dims,
       typography,
       backCover,
-      title: cover.title,
-      subtitle: cover.subtitle ?? undefined,
-      authorName: cover.authorName,
-      description: cover.description ?? '',
-      authorBio: cover.authorBio ?? undefined,
+      title: exportTitle,
+      subtitle: exportSubtitle,
+      authorName: exportAuthorName,
+      description: exportDescription,
+      authorBio: exportAuthorBio,
       reviewQuote: parsed.data.reviewQuote ?? cover.reviewQuote ?? undefined,
       reviewAttribution: parsed.data.reviewAttribution,
       titleFontScale: parsed.data.titleFontScale,

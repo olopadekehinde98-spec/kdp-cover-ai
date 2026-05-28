@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import RatingModal from '@/components/RatingModal'
+import CoverPreview from '@/components/editor/CoverPreview'
 
 const GENRES = [
   { value: 'thriller', label: 'Thriller', emoji: '🔪' },
@@ -333,6 +334,7 @@ function GeneratePage() {
   const [brandSaved, setBrandSaved] = useState(false)
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingCoverId, setRatingCoverId] = useState('')
+  const [editOpen, setEditOpen] = useState(false)
 
   async function handleAIDescription() {
     if (!form.title || !form.genre) { setAiDescError('Enter a title and genre first.'); return }
@@ -385,6 +387,12 @@ function GeneratePage() {
           spineWidthOverride: spineOverride,
           reviewQuote: form.reviewQuote || undefined,
           reviewAttribution: form.reviewAttribution || undefined,
+          // Pass any text edits made on the result screen
+          titleOverride:       form.title       || undefined,
+          subtitleOverride:    form.subtitle     || undefined,
+          authorNameOverride:  form.authorName   || undefined,
+          descriptionOverride: form.description  || undefined,
+          authorBioOverride:   form.authorBio    || undefined,
         }),
       })
       if (!res.ok) {
@@ -1042,27 +1050,167 @@ function GeneratePage() {
           <RatingModal coverId={ratingCoverId} onClose={() => setShowRatingModal(false)} />
         )}
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Your KDP Cover is Ready!</h2>
+          <h2 className="text-xl font-semibold text-white mb-1">Your KDP Cover is Ready!</h2>
+          <p className="text-gray-400 text-sm mb-4">Full-wrap preview — front cover, spine &amp; back cover with your text.</p>
 
-          {result.imageUrl && (
-            <div className="rounded-xl overflow-hidden mb-5 border border-gray-700">
-              <img src={result.imageUrl} alt="Generated cover" className="w-full object-contain max-h-80" />
+          {/* ── Live canvas preview with text overlays ── */}
+          {result.imageUrl && result.dims && (
+            <div className="mb-5">
+              <CoverPreview
+                imageUrl={result.imageUrl}
+                dims={result.dims}
+                title={form.title}
+                subtitle={form.subtitle || undefined}
+                authorName={form.authorName}
+                description={form.description || undefined}
+                authorBio={form.authorBio || undefined}
+                reviewQuote={form.reviewQuote || undefined}
+                reviewAttribution={form.reviewAttribution || undefined}
+                titleFontScale={form.titleFontScale}
+                titleStyle={form.titleStyle}
+              />
+              <p className="text-xs text-gray-600 mt-2 text-center">
+                Preview only — red dashes mark bleed edges. The downloaded PDF is the final print file.
+              </p>
             </div>
           )}
 
-          {result.dims && (
-            <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4 mb-5">
-              <p className="text-sm font-medium text-gray-300 mb-3">KDP Dimensions</p>
-              <div className="grid grid-cols-2 gap-y-1.5 text-xs">
-                <span className="text-gray-500">Total Width:</span><span className="text-green-400 font-mono">{result.dims.totalWidth.toFixed(3)}"</span>
-                <span className="text-gray-500">Total Height:</span><span className="text-green-400 font-mono">{result.dims.totalHeight.toFixed(3)}"</span>
-                <span className="text-gray-500">Spine Width:</span>
-                <span className="text-green-400 font-mono">
-                  {form.spineWidthOverride ? `${form.spineWidthOverride}" (Amazon KDP)` : `${result.dims.spineWidth.toFixed(4)}"`}
-                </span>
-                <span className="text-gray-500">Resolution:</span><span className="text-green-400 font-mono">{result.dims.totalWidthPx} × {result.dims.totalHeightPx} px @ 300 DPI</span>
+          {/* ── Edit Cover Text panel ── */}
+          <div className="mb-5">
+            <button
+              onClick={() => setEditOpen(v => !v)}
+              className="w-full flex items-center justify-between bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-xl px-4 py-3 text-sm font-semibold text-white transition"
+            >
+              <span>✏️ Edit Cover Text</span>
+              <span className="text-gray-400 text-xs">{editOpen ? '▲ Hide' : '▼ Show'}</span>
+            </button>
+
+            {editOpen && (
+              <div className="mt-3 bg-gray-800/60 border border-gray-700 rounded-xl p-5 space-y-4">
+                <p className="text-xs text-gray-500">Changes update the preview instantly and will be included in your download.</p>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5">Title</label>
+                    <input
+                      value={form.title}
+                      onChange={e => update('title', e.target.value)}
+                      className={inp()}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5">Subtitle <span className="text-gray-600">(optional)</span></label>
+                    <input
+                      value={form.subtitle}
+                      onChange={e => update('subtitle', e.target.value)}
+                      placeholder="Leave empty for no subtitle"
+                      className={inp()}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5">Author Name</label>
+                    <input
+                      value={form.authorName}
+                      onChange={e => update('authorName', e.target.value)}
+                      className={inp()}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-700 pt-4 space-y-3">
+                  <p className="text-xs text-gray-400 font-medium">Back Cover Text</p>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1.5">About The Book</label>
+                    <textarea
+                      value={form.description}
+                      onChange={e => update('description', e.target.value)}
+                      rows={4}
+                      className={inp('resize-none')}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1.5">About The Author <span className="text-gray-600">(optional)</span></label>
+                    <textarea
+                      value={form.authorBio}
+                      onChange={e => update('authorBio', e.target.value)}
+                      rows={3}
+                      className={inp('resize-none')}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1.5">Review Quote <span className="text-gray-600">(optional)</span></label>
+                    <textarea
+                      value={form.reviewQuote}
+                      onChange={e => update('reviewQuote', e.target.value)}
+                      rows={2}
+                      className={inp('resize-none')}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1.5">Quote Attribution <span className="text-gray-600">(optional)</span></label>
+                    <input
+                      value={form.reviewAttribution}
+                      onChange={e => update('reviewAttribution', e.target.value)}
+                      placeholder="e.g. — Publishers Weekly"
+                      className={inp()}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-700 pt-4 space-y-3">
+                  <p className="text-xs text-gray-400 font-medium">Front Cover Style</p>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">Title Font Style</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { value: 'bold-sans',    label: 'Bold Modern' },
+                        { value: 'serif',        label: 'Classic Serif' },
+                        { value: 'serif-italic', label: 'Elegant Italic' },
+                        { value: 'serif-light',  label: 'Serif Light' },
+                        { value: 'sans-oblique', label: 'Modern Slanted' },
+                        { value: 'courier-bold', label: 'Typewriter' },
+                      ].map(s => (
+                        <button key={s.value} onClick={() => update('titleStyle', s.value)}
+                          className={`p-2 rounded-lg border text-xs font-medium transition text-left
+                            ${form.titleStyle === s.value
+                              ? 'border-violet-500 bg-violet-900/30 text-violet-300'
+                              : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1.5">
+                      Title Size — <span className="text-violet-400">{FONT_SCALE_LABELS[form.titleFontScale.toFixed(1)] ?? `${form.titleFontScale}×`}</span>
+                    </label>
+                    <input type="range" min="0.6" max="1.4" step="0.2" value={form.titleFontScale}
+                      onChange={e => update('titleFontScale', parseFloat(e.target.value))}
+                      className="w-full accent-violet-500" />
+                    <div className="flex justify-between text-xs text-gray-600 mt-0.5">
+                      <span>Small</span><span>Medium</span><span>X-Large</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+          </div>
+
+          {result.dims && (
+            <details className="mb-5">
+              <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-400 select-none">▶ KDP Dimensions</summary>
+              <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4 mt-2">
+                <div className="grid grid-cols-2 gap-y-1.5 text-xs">
+                  <span className="text-gray-500">Total Width:</span><span className="text-green-400 font-mono">{result.dims.totalWidth.toFixed(3)}"</span>
+                  <span className="text-gray-500">Total Height:</span><span className="text-green-400 font-mono">{result.dims.totalHeight.toFixed(3)}"</span>
+                  <span className="text-gray-500">Spine Width:</span>
+                  <span className="text-green-400 font-mono">
+                    {form.spineWidthOverride ? `${form.spineWidthOverride}" (Amazon KDP)` : `${result.dims.spineWidth.toFixed(4)}"`}
+                  </span>
+                  <span className="text-gray-500">Resolution:</span><span className="text-green-400 font-mono">{result.dims.totalWidthPx} × {result.dims.totalHeightPx} px @ 300 DPI</span>
+                </div>
+              </div>
+            </details>
           )}
 
           {/* ISBN + Barcode before download */}
