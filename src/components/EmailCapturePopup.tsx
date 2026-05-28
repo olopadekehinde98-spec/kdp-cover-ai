@@ -12,8 +12,8 @@ export default function EmailCapturePopup() {
     const dismissed = localStorage.getItem('kdp_popup_dismissed')
     if (dismissed) return
 
-    // Show after 25 seconds on page
-    const t = setTimeout(() => setShow(true), 25000)
+    // Show after 8 seconds on page
+    const t = setTimeout(() => setShow(true), 8000)
     return () => clearTimeout(t)
   }, [])
 

@@ -6,6 +6,7 @@ import CoverGallery from '@/components/CoverGallery'
 import EmailCapturePopup from '@/components/EmailCapturePopup'
 import AnnounceBanner from '@/components/AnnounceBanner'
 import InlineSignupCapture from '@/components/InlineSignupCapture'
+import StickyEmailBar from '@/components/StickyEmailBar'
 
 const FEATURES = [
   {
@@ -391,6 +392,7 @@ export default function LandingPage() {
       <SiteFooter />
     </div>
     <EmailCapturePopup />
+    <StickyEmailBar />
     </>
   )
 }
