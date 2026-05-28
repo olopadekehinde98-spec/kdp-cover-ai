@@ -1,6 +1,9 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Guard against missing key in local dev (key only exists on Vercel)
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null
 
 export const FROM_EMAIL = 'KDP Cover AI <updates@kdpcoverai.site>'
 export const REPLY_TO   = 'support@kdpcoverai.site'
@@ -18,7 +21,7 @@ export async function sendEmail(opts: {
     return { ok: false, error: 'RESEND_API_KEY not configured' }
   }
   try {
-    const result = await resend.emails.send({
+    const result = await resend!.emails.send({
       from: FROM_EMAIL,
       to: opts.to,
       subject: opts.subject,

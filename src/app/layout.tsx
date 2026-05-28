@@ -135,9 +135,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <ReferralCapture />
         </Suspense>
-        <Suspense fallback={null}>
-          <SignupPopup />
-        </Suspense>
+        {hasClerkKey && (
+          <Suspense fallback={null}>
+            <SignupPopup />
+          </Suspense>
+        )}
         {children}
         <SupportChatBot />
       </body>
