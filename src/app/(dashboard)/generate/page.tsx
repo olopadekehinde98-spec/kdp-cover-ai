@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import RatingModal from '@/components/RatingModal'
 import CoverPreview from '@/components/editor/CoverPreview'
+import UpgradeWall from '@/components/UpgradeWall'
+import FirstCoverOffer from '@/components/FirstCoverOffer'
 
 const GENRES = [
   { value: 'thriller', label: 'Thriller', emoji: '🔪' },
@@ -126,6 +128,8 @@ function GeneratePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<any>(null)
+  const [showUpgradeWall, setShowUpgradeWall] = useState(false)
+  const [showFirstCoverOffer, setShowFirstCoverOffer] = useState(false)
 
   // Upload state
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
@@ -333,11 +337,21 @@ function GeneratePage() {
       })
       let data: any
       try { data = await res.json() } catch { throw new Error('Generation timed out. Please try again.') }
-      if (!res.ok) throw new Error(data?.error || 'Generation failed.')
+      if (!res.ok) {
+        if (data?.error?.includes('limit') || res.status === 429 && data?.upgradeUrl) {
+          setShowUpgradeWall(true); return
+        }
+        throw new Error(data?.error || 'Generation failed.')
+      }
       setResult(data); setStep(99)
       if (data?.coverId) {
         setRatingCoverId(data.coverId)
         setTimeout(() => setShowRatingModal(true), 4000)
+        // Show first-cover offer once per session
+        if (!sessionStorage.getItem('first-cover-offer-shown')) {
+          sessionStorage.setItem('first-cover-offer-shown', '1')
+          setTimeout(() => setShowFirstCoverOffer(true), 6000)
+        }
       }
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
@@ -362,11 +376,20 @@ function GeneratePage() {
       })
       let data: any
       try { data = await res.json() } catch { throw new Error('Upload timed out. Please try again.') }
-      if (!res.ok) throw new Error(data?.error || 'Upload failed.')
+      if (!res.ok) {
+        if (data?.error?.includes('limit') || (res.status === 429 && data?.upgradeUrl)) {
+          setShowUpgradeWall(true); return
+        }
+        throw new Error(data?.error || 'Upload failed.')
+      }
       setResult(data); setStep(99)
       if (data?.coverId) {
         setRatingCoverId(data.coverId)
         setTimeout(() => setShowRatingModal(true), 4000)
+        if (!sessionStorage.getItem('first-cover-offer-shown')) {
+          sessionStorage.setItem('first-cover-offer-shown', '1')
+          setTimeout(() => setShowFirstCoverOffer(true), 6000)
+        }
       }
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
@@ -1043,6 +1066,7 @@ function GeneratePage() {
 
   return (
     <div className="min-h-screen bg-gray-950 py-10 px-4">
+      {showUpgradeWall && <UpgradeWall onClose={() => setShowUpgradeWall(false)} />}
       <div className="max-w-3xl mx-auto">
         <button onClick={resetAll} className="text-gray-500 hover:text-white text-sm mb-3 block">← Change method</button>
         <h1 className="text-3xl font-bold text-white mb-1">
@@ -1130,6 +1154,9 @@ function GeneratePage() {
       <div className="space-y-5">
         {showRatingModal && ratingCoverId && (
           <RatingModal coverId={ratingCoverId} onClose={() => setShowRatingModal(false)} />
+        )}
+        {showFirstCoverOffer && (
+          <FirstCoverOffer onClose={() => setShowFirstCoverOffer(false)} />
         )}
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
           <h2 className="text-xl font-semibold text-white mb-1">Your KDP Cover is Ready!</h2>

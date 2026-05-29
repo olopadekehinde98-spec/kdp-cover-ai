@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db/prisma'
 import Link from 'next/link'
+import EmailLimitHittersButton from '@/components/admin/EmailLimitHittersButton'
 
 export default async function NonSubscribersPage() {
   const { userId } = await auth()
@@ -24,10 +25,13 @@ export default async function NonSubscribersPage() {
   return (
     <div className="min-h-screen bg-gray-950 py-10 px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/admin" className="text-gray-500 hover:text-gray-300 text-sm">← Admin</Link>
-          <h1 className="text-2xl font-bold text-white">Non-Subscribers</h1>
-          <span className="text-sm text-gray-500">({users.length} free users)</span>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/admin" className="text-gray-500 hover:text-gray-300 text-sm">← Admin</Link>
+            <h1 className="text-2xl font-bold text-white">Non-Subscribers</h1>
+            <span className="text-sm text-gray-500">({users.length} free users)</span>
+          </div>
+          <EmailLimitHittersButton count={usedLimit} />
         </div>
 
         {/* Stats */}
@@ -46,27 +50,23 @@ export default async function NonSubscribersPage() {
           ))}
         </div>
 
-        {/* Conversion tip */}
         <div className="bg-amber-950/30 border border-amber-700/30 rounded-xl p-4 mb-6 text-sm">
           <p className="text-amber-400 font-semibold mb-1">💡 Conversion Tips</p>
           <p className="text-gray-400">
-            <strong className="text-white">{usedLimit} users</strong> have hit their free limit — send them a discount code.{' '}
-            <strong className="text-white">{neverGenerated} users</strong> never tried the tool — send a re-engagement email.
-            Go to <Link href="/admin/discounts" className="text-violet-400 underline">Discounts</Link> to create a targeted code.
+            <strong className="text-white">{usedLimit} users</strong> hit their limit — click &quot;Email UPGRADE20&quot; above to send them a 20% off code.{' '}
+            <strong className="text-white">{neverGenerated} users</strong> never generated — consider a re-engagement campaign.
           </p>
         </div>
 
-        {/* User table */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 text-gray-500 text-xs">
                 <th className="text-left px-5 py-3">Email</th>
                 <th className="text-left px-5 py-3">Name</th>
-                <th className="text-left px-5 py-3">Covers Made</th>
+                <th className="text-left px-5 py-3">Covers</th>
                 <th className="text-left px-5 py-3">Generations</th>
                 <th className="text-left px-5 py-3">Status</th>
-                <th className="text-left px-5 py-3">Country</th>
                 <th className="text-left px-5 py-3">Joined</th>
               </tr>
             </thead>
@@ -76,20 +76,14 @@ export default async function NonSubscribersPage() {
                 const daysAgo = Math.floor((today.getTime() - new Date(u.createdAt).getTime()) / dayMs)
                 return (
                   <tr key={u.id} className={`hover:bg-gray-800/40 transition ${hitLimit ? 'bg-amber-950/10' : ''}`}>
-                    <td className="px-5 py-3">
-                      <span className="text-white font-mono text-xs">{u.email}</span>
-                    </td>
+                    <td className="px-5 py-3 text-white font-mono text-xs">{u.email}</td>
                     <td className="px-5 py-3 text-gray-400 text-xs">{u.name || '—'}</td>
                     <td className="px-5 py-3 text-center">
-                      <span className={`font-bold ${u._count.covers > 0 ? 'text-green-400' : 'text-gray-600'}`}>
-                        {u._count.covers}
-                      </span>
+                      <span className={u._count.covers > 0 ? 'text-green-400 font-bold' : 'text-gray-600'}>{u._count.covers}</span>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <span className={hitLimit ? 'text-amber-400 font-bold' : 'text-gray-300'}>
-                          {u.generationsUsed}/{u.generationsLimit}
-                        </span>
+                        <span className={hitLimit ? 'text-amber-400 font-bold' : 'text-gray-300'}>{u.generationsUsed}/{u.generationsLimit}</span>
                         {hitLimit && <span className="text-xs bg-amber-900/50 text-amber-400 px-1.5 py-0.5 rounded-full">Limit hit</span>}
                       </div>
                     </td>
@@ -101,7 +95,6 @@ export default async function NonSubscribersPage() {
                           : <span className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">Active free</span>
                       }
                     </td>
-                    <td className="px-5 py-3 text-gray-500 text-xs">{u.ipAddress || '—'}</td>
                     <td className="px-5 py-3 text-gray-500 text-xs">
                       {daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`}
                     </td>
@@ -110,9 +103,7 @@ export default async function NonSubscribersPage() {
               })}
             </tbody>
           </table>
-          {users.length === 0 && (
-            <div className="py-10 text-center text-gray-500">No free users yet</div>
-          )}
+          {users.length === 0 && <div className="py-10 text-center text-gray-500">No free users yet</div>}
         </div>
       </div>
     </div>

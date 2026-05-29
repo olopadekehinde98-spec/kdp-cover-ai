@@ -7,6 +7,7 @@ import EmailCapturePopup from '@/components/EmailCapturePopup'
 import AnnounceBanner from '@/components/AnnounceBanner'
 import InlineSignupCapture from '@/components/InlineSignupCapture'
 import StickyEmailBar from '@/components/StickyEmailBar'
+import TimedPopup from '@/components/TimedPopup'
 
 const FEATURES = [
   {
@@ -96,6 +97,7 @@ export default function LandingPage() {
   return (
     <>
     <AnnounceBanner />
+    <TimedPopup />
     <div className="min-h-screen bg-gray-950 text-white">
       <SiteHeader />
 

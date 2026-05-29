@@ -7,6 +7,7 @@ import DashboardNav from '@/components/DashboardNav'
 import SupportChatBot from '@/components/SupportChatBot'
 import IpTracker from '@/components/IpTracker'
 import ReferralCapture from '@/components/ReferralCapture'
+import ExitIntentPopup from '@/components/ExitIntentPopup'
 
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -183,6 +184,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </div>
       </footer>
+      <ExitIntentPopup />
     </div>
   )
 }

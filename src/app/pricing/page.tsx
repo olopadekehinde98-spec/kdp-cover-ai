@@ -152,6 +152,9 @@ export default function PricingPage() {
           <p className="text-gray-400 text-xl max-w-2xl mx-auto">
             Start free with 3 covers. Upgrade when you&apos;re ready. Cancel anytime.
           </p>
+          <div className="inline-flex items-center gap-2 mt-4 bg-green-950/40 border border-green-700/50 rounded-full px-4 py-2 text-sm">
+            <span className="text-green-400 font-semibold">🎁 Use code <span className="font-mono font-black">UPGRADE20</span> for 20% off your first month</span>
+          </div>
         </div>
 
         {/* Payment method toggle */}
