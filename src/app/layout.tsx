@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import SupportChatBot from '@/components/SupportChatBot'
 import ReferralCapture from '@/components/ReferralCapture'
 import SignupPopup from '@/components/SignupPopup'
+import VisitorTracker from '@/components/VisitorTracker'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -140,6 +141,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SignupPopup />
           </Suspense>
         )}
+        <Suspense fallback={null}>
+          <VisitorTracker />
+        </Suspense>
         {children}
         <SupportChatBot />
       </body>

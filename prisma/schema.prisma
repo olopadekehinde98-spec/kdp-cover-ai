@@ -311,3 +311,19 @@ model NewsletterSubscriber {
   @@index([confirmed])
   @@index([email])
 }
+
+model VisitorLog {
+  id          String   @id @default(cuid())
+  country     String?
+  city        String?
+  region      String?
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  page        String?
+  createdAt   DateTime @default(now())
+
+  @@index([country])
+  @@index([createdAt])
+}

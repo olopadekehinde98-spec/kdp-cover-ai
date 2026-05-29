@@ -109,6 +109,54 @@ function rows(data: any): Array<{ dims: string[]; vals: string[] }> {
   }))
 }
 
+async function getDbStats() {
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const monthStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+  const [
+    totalUsers, todaySignups, weekSignups, monthSignups,
+    planCounts, dailySignups, paidUsers, visitorCountries,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
+    prisma.user.count({ where: { createdAt: { gte: weekStart } } }),
+    prisma.user.count({ where: { createdAt: { gte: monthStart } } }),
+    prisma.user.groupBy({ by: ['plan'], _count: { _all: true } }),
+    prisma.$queryRaw<Array<{ day: string; count: bigint }>>`
+      SELECT DATE("createdAt") as day, COUNT(*) as count
+      FROM "User"
+      WHERE "createdAt" >= NOW() - INTERVAL '14 days'
+      GROUP BY DATE("createdAt")
+      ORDER BY day ASC
+    `,
+    prisma.user.count({ where: { subscriptionStatus: 'active' } }),
+    prisma.visitorLog.groupBy({
+      by: ['country'],
+      _count: { _all: true },
+      orderBy: { _count: { country: 'desc' } },
+      take: 10,
+      where: { country: { not: null } },
+    }),
+  ])
+
+  const planMap: Record<string, number> = {}
+  for (const p of planCounts) planMap[p.plan] = p._count._all
+
+  return {
+    totalUsers,
+    todaySignups,
+    weekSignups,
+    monthSignups,
+    plans: planMap,
+    paidUsers,
+    conversionRate: totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0',
+    dailySignups: dailySignups.map(d => ({ date: String(d.day).slice(0, 10), count: Number(d.count) })),
+    visitorCountries: visitorCountries.map(v => ({ country: v.country ?? 'Unknown', count: v._count._all })),
+  }
+}
+
 export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -122,14 +170,17 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // Always return DB stats even if GA4 not configured
+  const dbStats = await getDbStats()
+
   const propertyId = process.env.GA_PROPERTY_ID
   if (!propertyId) {
-    return NextResponse.json({ error: 'GA_PROPERTY_ID not configured', setup_needed: true })
+    return NextResponse.json({ setup_needed: true, dbStats })
   }
 
   const token = await getGoogleAccessToken()
   if (!token) {
-    return NextResponse.json({ error: 'GA service account not configured', setup_needed: true })
+    return NextResponse.json({ setup_needed: true, dbStats })
   }
 
   // Run all reports in parallel
@@ -199,6 +250,7 @@ export async function GET() {
   const overview = overviewData?.rows?.[0]?.metricValues ?? []
 
   return NextResponse.json({
+    dbStats,
     realtime: {
       activeUsers: realtimeData?.rows?.[0]?.metricValues?.[0]?.value ?? '0',
     },
