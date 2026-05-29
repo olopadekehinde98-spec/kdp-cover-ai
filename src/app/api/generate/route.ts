@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
 import { generateCoverImage } from '@/lib/ai-engine/generator'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export const maxDuration = 60
 import { calculateKDPDimensions } from '@/lib/kdp-engine/calculator'
@@ -36,6 +37,15 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
   if (user.isBanned) return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
+
+  // Rate limit: max 10 generations per hour per user
+  const rl = await checkRateLimit(`gen:${user.id}`, 10, 60 * 60 * 1000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Too many requests. Try again in ${rl.retryAfter}s.` },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    )
+  }
 
   if (user.generationsUsed >= user.generationsLimit) {
     return NextResponse.json({

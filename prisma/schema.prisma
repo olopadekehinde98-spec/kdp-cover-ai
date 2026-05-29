@@ -327,3 +327,43 @@ model VisitorLog {
   @@index([country])
   @@index([createdAt])
 }
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String
+  count     Int      @default(1)
+  windowEnd DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([key, windowEnd])
+  @@index([windowEnd])
+}
+
+model DiscountCode {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  description     String?
+  discountPct     Int
+  maxUses         Int?
+  usedCount       Int      @default(0)
+  planRestriction String?
+  expiresAt       DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  redemptions DiscountRedemption[]
+
+  @@index([code])
+}
+
+model DiscountRedemption {
+  id        String       @id @default(cuid())
+  codeId    String
+  code      DiscountCode @relation(fields: [codeId], references: [id])
+  userId    String
+  plan      String
+  createdAt DateTime     @default(now())
+
+  @@unique([codeId, userId])
+  @@index([userId])
+}

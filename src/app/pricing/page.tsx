@@ -66,11 +66,48 @@ const NGN_PRICES: Record<string, number> = {
   AGENCY: 109600,
 }
 
+type DiscountResult = {
+  valid: boolean; discountPct: number; description?: string
+  ngnOriginal: number; ngnDiscounted: number; usdOriginal: number; usdDiscounted: number; savings: number
+}
+
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
-  // 'paystack' = card via Paystack (NGN), 'transfer' = bank transfer fallback
   const [provider, setProvider] = useState<'paystack' | 'transfer'>('paystack')
+  const [discountCode, setDiscountCode] = useState('')
+  const [discountResult, setDiscountResult] = useState<DiscountResult | null>(null)
+  const [discountError, setDiscountError] = useState('')
+  const [discountLoading, setDiscountLoading] = useState(false)
+  const [activePlanForDiscount, setActivePlanForDiscount] = useState<string | null>(null)
+
+  async function applyDiscount(plan: string) {
+    if (!discountCode.trim()) return
+    setDiscountLoading(true)
+    setDiscountError('')
+    setDiscountResult(null)
+    setActivePlanForDiscount(plan)
+    try {
+      const res = await fetch('/api/discount', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountCode.trim(), plan }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setDiscountError(data.error || 'Invalid code'); return }
+      setDiscountResult(data)
+    } catch { setDiscountError('Failed to validate code') }
+    finally { setDiscountLoading(false) }
+  }
+
+  function getPrice(plan: string) {
+    if (discountResult && activePlanForDiscount === plan) {
+      return provider === 'transfer'
+        ? { ngn: discountResult.ngnDiscounted, usd: discountResult.usdDiscounted }
+        : { ngn: discountResult.ngnDiscounted, usd: discountResult.usdDiscounted }
+    }
+    return { ngn: NGN_PRICES[plan], usd: PLANS.find(p => p.key === plan)?.price ?? 0 }
+  }
 
   async function handleSubscribe(plan: string) {
     // Bank transfer: scroll to payment section
@@ -153,6 +190,38 @@ export default function PricingPage() {
           </p>
         )}
 
+        {/* Discount code */}
+        <div className="max-w-md mx-auto mb-8">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+            <p className="text-xs text-gray-400 mb-2 font-semibold">🎟️ Have a discount code?</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={discountCode}
+                onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountResult(null); setDiscountError('') }}
+                placeholder="Enter code (e.g. LAUNCH20)"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-violet-500"
+              />
+              <button
+                onClick={() => activePlanForDiscount ? applyDiscount(activePlanForDiscount) : setDiscountError('Select a plan first')}
+                disabled={discountLoading || !discountCode.trim()}
+                className="bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white text-sm font-semibold px-4 py-2 rounded-xl transition"
+              >
+                {discountLoading ? '…' : 'Apply'}
+              </button>
+            </div>
+            {discountError && <p className="text-red-400 text-xs mt-2">{discountError}</p>}
+            {discountResult && (
+              <p className="text-green-400 text-xs mt-2 font-semibold">
+                ✓ {discountResult.discountPct}% off applied{discountResult.description ? ` — ${discountResult.description}` : ''}! You save ₦{discountResult.savings.toLocaleString()}
+              </p>
+            )}
+            {!activePlanForDiscount && !discountError && (
+              <p className="text-gray-600 text-xs mt-1">Click &quot;Apply&quot; after choosing your plan below</p>
+            )}
+          </div>
+        </div>
+
         {/* Plans */}
         <div className="grid md:grid-cols-3 gap-6 mb-10">
           {PLANS.map(plan => (
@@ -178,21 +247,28 @@ export default function PricingPage() {
               </div>
 
               <div className="mb-6">
-                {provider === 'transfer' ? (
-                  <>
-                    <span className="text-4xl font-bold text-white">${plan.price}</span>
-                    <span className="text-gray-500 text-sm">/month</span>
-                    <div className="text-green-400 text-sm font-medium mt-1">
-                      ≈ ₦{NGN_PRICES[plan.key].toLocaleString()} / month
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-4xl font-bold text-white">₦{NGN_PRICES[plan.key].toLocaleString()}</span>
-                    <span className="text-gray-500 text-sm">/month</span>
-                    <div className="text-gray-500 text-xs mt-1">≈ ${plan.price} USD</div>
-                  </>
-                )}
+                {(() => {
+                  const price = getPrice(plan.key)
+                  const hasDiscount = discountResult && activePlanForDiscount === plan.key
+                  return provider === 'transfer' ? (
+                    <>
+                      {hasDiscount && <span className="text-gray-500 line-through text-lg mr-2">${plan.price}</span>}
+                      <span className="text-4xl font-bold text-white">${price.usd}</span>
+                      <span className="text-gray-500 text-sm">/month</span>
+                      <div className={`text-sm font-medium mt-1 ${hasDiscount ? 'text-green-400' : 'text-green-400'}`}>
+                        {hasDiscount && <span className="line-through text-gray-500 mr-1">₦{NGN_PRICES[plan.key].toLocaleString()}</span>}
+                        ≈ ₦{price.ngn.toLocaleString()} / month
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {hasDiscount && <span className="text-gray-500 line-through text-lg mr-2">₦{NGN_PRICES[plan.key].toLocaleString()}</span>}
+                      <span className={`text-4xl font-bold ${hasDiscount ? 'text-green-400' : 'text-white'}`}>₦{price.ngn.toLocaleString()}</span>
+                      <span className="text-gray-500 text-sm">/month</span>
+                      <div className="text-gray-500 text-xs mt-1">≈ ${price.usd} USD</div>
+                    </>
+                  )
+                })()}
               </div>
 
               <ul className="space-y-3 mb-8 flex-1">
@@ -204,19 +280,29 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <button
-                onClick={() => handleSubscribe(plan.key)}
-                disabled={loading === plan.key}
-                className={`w-full py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2
-                  ${plan.highlight
-                    ? 'bg-violet-600 hover:bg-violet-700 text-white'
-                    : 'bg-gray-800 hover:bg-gray-700 text-gray-200'}`}>
-                {loading === plan.key ? (
-                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing...</>
-                ) : provider === 'transfer'
-                  ? `🏦 Pay by Transfer — ${plan.cta}`
-                  : `💳 ${plan.cta} in ₦`}
-              </button>
+              <div className="space-y-2">
+                {discountCode.trim() && activePlanForDiscount !== plan.key && (
+                  <button
+                    onClick={() => applyDiscount(plan.key)}
+                    className="w-full py-2 rounded-xl text-xs font-medium text-violet-400 border border-violet-700/50 hover:bg-violet-950/30 transition"
+                  >
+                    Apply &quot;{discountCode}&quot; to this plan
+                  </button>
+                )}
+                <button
+                  onClick={() => handleSubscribe(plan.key)}
+                  disabled={loading === plan.key}
+                  className={`w-full py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2
+                    ${plan.highlight
+                      ? 'bg-violet-600 hover:bg-violet-700 text-white'
+                      : 'bg-gray-800 hover:bg-gray-700 text-gray-200'}`}>
+                  {loading === plan.key ? (
+                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing...</>
+                  ) : provider === 'transfer'
+                    ? `🏦 Pay by Transfer — ${plan.cta}`
+                    : `💳 ${plan.cta} in ₦`}
+                </button>
+              </div>
             </div>
           ))}
         </div>
