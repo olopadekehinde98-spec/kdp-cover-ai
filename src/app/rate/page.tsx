@@ -100,4 +100,3 @@ export default function RatePage() {
     </div>
   )
 }
-// cache bust Fri May 29 20:16:37 WCAST 2026
