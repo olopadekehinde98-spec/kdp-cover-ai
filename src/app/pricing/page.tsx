@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
+import ExitIntentPopup from '@/components/ExitIntentPopup'
 
 const PLANS = [
   {
@@ -452,6 +453,7 @@ export default function PricingPage() {
       </div>
 
       <SiteFooter />
+      <ExitIntentPopup />
     </div>
   )
 }

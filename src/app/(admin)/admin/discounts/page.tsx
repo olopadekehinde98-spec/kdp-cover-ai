@@ -15,6 +15,11 @@ export default function AdminDiscountsPage() {
   const [form, setForm] = useState({ code: '', description: '', discountPct: '20', maxUses: '', planRestriction: '', expiresAt: '' })
   const [creating, setCreating] = useState(false)
   const [msg, setMsg] = useState('')
+  const [aiContext, setAiContext] = useState('')
+  const [aiExpiry, setAiExpiry] = useState('24')
+  const [aiPct, setAiPct] = useState('20')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiMsg, setAiMsg] = useState('')
 
   async function load() {
     const res = await fetch('/api/admin/discounts')
@@ -40,6 +45,19 @@ export default function AdminDiscountsPage() {
     setCreating(false)
   }
 
+  async function generateAI() {
+    setAiLoading(true); setAiMsg('')
+    const res = await fetch('/api/admin/discounts/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context: aiContext, discountPct: Number(aiPct), expiresInHours: aiExpiry ? Number(aiExpiry) : null }),
+    })
+    const data = await res.json()
+    if (res.ok) { setAiMsg(`✓ Created "${data.code}" — expires in ${aiExpiry}h`); load() }
+    else setAiMsg(data.error || 'Failed')
+    setAiLoading(false)
+  }
+
   async function deactivate(id: string) {
     await fetch('/api/admin/discounts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
     load()
@@ -48,6 +66,32 @@ export default function AdminDiscountsPage() {
   return (
     <div className="flex-1 py-8 px-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-black text-white mb-6">Discount Codes</h1>
+
+      {/* AI Generator */}
+      <div className="bg-gray-900 border border-violet-700/40 rounded-2xl p-6 mb-6">
+        <h2 className="text-sm font-semibold text-white mb-1">🤖 AI Code Generator</h2>
+        <p className="text-xs text-gray-500 mb-4">AI creates the code name, auto-deactivates at your set time</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Context / reason</label>
+            <input value={aiContext} onChange={e => setAiContext(e.target.value)} placeholder="e.g. Black Friday, launch..." className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">% Discount</label>
+            <input value={aiPct} onChange={e => setAiPct(e.target.value)} placeholder="20" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Auto-expire in (hours)</label>
+            <input value={aiExpiry} onChange={e => setAiExpiry(e.target.value)} placeholder="24" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+          </div>
+          <div className="flex items-end">
+            <button onClick={generateAI} disabled={aiLoading} className="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white font-semibold px-4 py-2 rounded-xl text-sm transition">
+              {aiLoading ? '✨ Generating…' : '✨ Generate Code'}
+            </button>
+          </div>
+        </div>
+        {aiMsg && <p className={`text-xs mt-3 ${aiMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{aiMsg}</p>}
+      </div>
 
       {/* Create form */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8">
