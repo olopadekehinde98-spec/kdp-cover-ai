@@ -1,8 +1,16 @@
-{
-  "crons": [
+﻿{
+  "headers": [
     {
-      "path": "/api/cron/newsletter",
-      "schedule": "0 9 */3 * *"
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    },
+    {
+      "source": "/(dashboard|admin|rate|generate|history|account)(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
     }
   ]
 }
