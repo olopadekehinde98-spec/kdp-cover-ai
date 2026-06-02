@@ -3,8 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db/prisma'
 import { z } from 'zod'
 
-const PLATFORMS = ['instagram', 'tiktok', 'twitter', 'facebook'] as const
-const ALL_PLATFORMS = PLATFORMS.length // 4
+const PLATFORMS = ['instagram', 'youtube', 'tiktok'] as const
+const ALL_PLATFORMS = PLATFORMS.length // 3
 
 // When all 4 are followed → Starter plan for 30 days
 const FOLLOW_REWARD_PLAN = 'STARTER'

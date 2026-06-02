@@ -1,43 +1,38 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 
-// ── Update these URLs to your actual social media pages ──────────────────────
+// â”€â”€ Your social media pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SOCIAL_PLATFORMS = [
   {
     id: 'instagram',
     name: 'Instagram',
-    icon: '📸',
+    handle: '@kdpcoverai.official',
+    icon: 'ðŸ“¸',
     color: 'from-pink-600 to-purple-600',
     borderColor: 'border-pink-700/50',
-    url: process.env.NEXT_PUBLIC_INSTAGRAM_URL || 'https://instagram.com/kdpcoverai',
+    url: 'https://instagram.com/kdpcoverai.official',
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    handle: '@KdpCoveraiofficial',
+    icon: 'â–¶ï¸',
+    color: 'from-red-700 to-red-900',
+    borderColor: 'border-red-700/50',
+    url: 'https://youtube.com/@KdpCoveraiofficial',
   },
   {
     id: 'tiktok',
     name: 'TikTok',
-    icon: '🎵',
+    handle: '@kdpcoverai_official',
+    icon: 'ðŸŽµ',
     color: 'from-gray-800 to-gray-900',
     borderColor: 'border-gray-600/50',
-    url: process.env.NEXT_PUBLIC_TIKTOK_URL || 'https://tiktok.com/@kdpcoverai',
-  },
-  {
-    id: 'twitter',
-    name: 'Twitter / X',
-    icon: '𝕏',
-    color: 'from-sky-700 to-sky-900',
-    borderColor: 'border-sky-700/50',
-    url: process.env.NEXT_PUBLIC_TWITTER_URL || 'https://x.com/kdpcoverai',
-  },
-  {
-    id: 'facebook',
-    name: 'Facebook',
-    icon: '👥',
-    color: 'from-blue-700 to-blue-900',
-    borderColor: 'border-blue-700/50',
-    url: process.env.NEXT_PUBLIC_FACEBOOK_URL || 'https://facebook.com/kdpcoverai',
+    url: 'https://tiktok.com/@kdpcoverai_official',
   },
 ]
 
@@ -95,9 +90,9 @@ export default function RewardsClient() {
       if (!res.ok) { showToast(data.error || 'Something went wrong', 'error'); return }
 
       if (data.reward === 'starter_unlocked') {
-        showToast('🎉 Starter plan unlocked! You now have 20 covers for 30 days.')
+        showToast('ðŸŽ‰ Starter plan unlocked! You now have 20 covers for 30 days.')
       } else {
-        showToast(`✓ ${platform} follow recorded! ${4 - data.followCount} more to go.`)
+        showToast(`âœ“ ${platform} follow recorded! ${3 - data.followCount} more to go.`)
       }
       await loadStatus()
     } catch {
@@ -113,7 +108,7 @@ export default function RewardsClient() {
       const res = await fetch('/api/rewards/claim-pro', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) { showToast(data.error || 'Something went wrong', 'error'); return }
-      showToast('🚀 Pro plan unlocked! Unlimited covers for 30 days!')
+      showToast('ðŸš€ Pro plan unlocked! Unlimited covers for 30 days!')
       await loadStatus()
     } catch {
       showToast('Something went wrong', 'error')
@@ -153,7 +148,7 @@ export default function RewardsClient() {
           {/* Header */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-violet-950/60 border border-violet-700/40 text-violet-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
-              🎁 Free Plan Rewards
+              ðŸŽ Free Plan Rewards
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
               Earn Free Plans.<br />
@@ -163,7 +158,7 @@ export default function RewardsClient() {
             </h1>
             <p className="text-gray-400 text-lg max-w-xl mx-auto">
               Support us on social media and we'll unlock premium features for free.
-              Two ways to earn — the more you do, the more you get.
+              Two ways to earn â€” the more you do, the more you get.
             </p>
           </div>
 
@@ -171,7 +166,7 @@ export default function RewardsClient() {
             <div className="text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
               <p className="text-gray-400 mb-4">Sign in to start earning free plans</p>
               <Link href="/sign-in" className="inline-flex bg-violet-600 hover:bg-violet-700 text-white font-bold px-6 py-3 rounded-xl transition">
-                Sign In →
+                Sign In â†’
               </Link>
             </div>
           )}
@@ -182,10 +177,10 @@ export default function RewardsClient() {
               {/* Active earned plan banner */}
               {status.earnedPlan && status.earnedPlanExpiresAt && (
                 <div className="bg-green-950/30 border border-green-700/50 rounded-2xl p-5 flex items-center gap-4">
-                  <div className="text-3xl">🎉</div>
+                  <div className="text-3xl">ðŸŽ‰</div>
                   <div>
                     <p className="text-green-400 font-bold">
-                      {status.earnedPlan} plan active — earned for free!
+                      {status.earnedPlan} plan active â€” earned for free!
                     </p>
                     <p className="text-gray-400 text-sm">
                       Expires {new Date(status.earnedPlanExpiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -194,7 +189,7 @@ export default function RewardsClient() {
                 </div>
               )}
 
-              {/* ── TIER 1: Social Follows → Starter ── */}
+              {/* â”€â”€ TIER 1: Social Follows â†’ Starter â”€â”€ */}
               <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
                 <div className="px-6 pt-6 pb-4 border-b border-gray-800">
                   <div className="flex items-start justify-between gap-4">
@@ -205,11 +200,11 @@ export default function RewardsClient() {
                       </div>
                       <h2 className="text-xl font-bold text-white">Follow us on all 4 platforms</h2>
                       <p className="text-gray-400 text-sm mt-1">
-                        Earn <span className="text-violet-300 font-semibold">Starter plan free for 30 days</span> — 20 covers, all features
+                        Earn <span className="text-violet-300 font-semibold">Starter plan free for 30 days</span> â€” 20 covers, all features
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-3xl font-black text-white">{status.followCount}<span className="text-gray-600 text-xl">/4</span></p>
+                      <p className="text-3xl font-black text-white">{status.followCount}<span className="text-gray-600 text-xl">/3</span></p>
                       <p className="text-gray-500 text-xs">followed</p>
                     </div>
                   </div>
@@ -218,7 +213,7 @@ export default function RewardsClient() {
                   <div className="mt-4 h-2 bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-violet-600 to-pink-500 rounded-full transition-all duration-500"
-                      style={{ width: `${(status.followCount / 4) * 100}%` }}
+                      style={{ width: `${(status.followCount / 3) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -238,17 +233,17 @@ export default function RewardsClient() {
                             : `bg-gray-800 ${platform.borderColor} hover:bg-gray-750 cursor-pointer`
                         }`}
                       >
-                        <span className="text-2xl w-8 text-center">{followed ? '✅' : platform.icon}</span>
+                        <span className="text-2xl w-8 text-center">{followed ? 'âœ…' : platform.icon}</span>
                         <div className="flex-1 min-w-0">
                           <p className={`font-semibold text-sm ${followed ? 'text-green-400' : 'text-white'}`}>
                             {platform.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {followed ? 'Followed ✓' : isLoading ? 'Opening...' : 'Click to follow & mark done'}
+                            {followed ? 'Followed âœ“' : isLoading ? 'Opening...' : 'Click to follow & mark done'}
                           </p>
                         </div>
                         {!followed && (
-                          <span className="text-xs text-violet-400 font-bold shrink-0">Follow →</span>
+                          <span className="text-xs text-violet-400 font-bold shrink-0">Follow â†’</span>
                         )}
                       </button>
                     )
@@ -259,7 +254,7 @@ export default function RewardsClient() {
                   <div className="px-4 pb-4">
                     <div className="bg-violet-950/40 border border-violet-700/40 rounded-xl p-4 text-center">
                       <p className="text-violet-300 font-semibold text-sm">
-                        🎉 All followed! Your Starter plan has been activated automatically.
+                        ðŸŽ‰ All followed! Your Starter plan has been activated automatically.
                       </p>
                     </div>
                   </div>
@@ -268,13 +263,13 @@ export default function RewardsClient() {
                 {status.allFollowed && status.earnedPlan === 'STARTER' && (
                   <div className="px-4 pb-4">
                     <div className="bg-green-950/30 border border-green-700/40 rounded-xl p-3 text-center">
-                      <p className="text-green-400 font-semibold text-sm">✅ Starter plan active — 20 covers for 30 days</p>
+                      <p className="text-green-400 font-semibold text-sm">âœ… Starter plan active â€” 20 covers for 30 days</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* ── TIER 2: Referrals → Pro ── */}
+              {/* â”€â”€ TIER 2: Referrals â†’ Pro â”€â”€ */}
               <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
                 <div className="px-6 pt-6 pb-4 border-b border-gray-800">
                   <div className="flex items-start justify-between gap-4">
@@ -285,7 +280,7 @@ export default function RewardsClient() {
                       </div>
                       <h2 className="text-xl font-bold text-white">Refer 3 friends who sign up</h2>
                       <p className="text-gray-400 text-sm mt-1">
-                        Earn <span className="text-pink-300 font-semibold">Pro plan free for 30 days</span> — unlimited covers, all features
+                        Earn <span className="text-pink-300 font-semibold">Pro plan free for 30 days</span> â€” unlimited covers, all features
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -307,7 +302,7 @@ export default function RewardsClient() {
                   {referralLink ? (
                     <>
                       <div>
-                        <p className="text-gray-400 text-sm mb-2">Your unique referral link — share this:</p>
+                        <p className="text-gray-400 text-sm mb-2">Your unique referral link â€” share this:</p>
                         <div className="flex gap-2">
                           <div className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-300 font-mono truncate">
                             {referralLink}
@@ -324,20 +319,20 @@ export default function RewardsClient() {
                       {/* Share shortcuts */}
                       <div className="grid grid-cols-2 gap-2">
                         <a
-                          href={`https://wa.me/?text=${encodeURIComponent(`Generate professional Amazon KDP book covers in under 2 minutes — FREE!\n\n${referralLink}`)}`}
+                          href={`https://wa.me/?text=${encodeURIComponent(`Generate professional Amazon KDP book covers in under 2 minutes â€” FREE!\n\n${referralLink}`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 bg-green-800/30 hover:bg-green-800/50 border border-green-700/40 text-green-300 text-sm font-semibold py-3 rounded-xl transition"
                         >
-                          <span>💬</span> Share on WhatsApp
+                          <span>ðŸ’¬</span> Share on WhatsApp
                         </a>
                         <a
-                          href={`https://x.com/intent/tweet?text=${encodeURIComponent(`Generate professional Amazon KDP book covers FREE in under 2 mins 📚\n${referralLink}`)}`}
+                          href={`https://x.com/intent/tweet?text=${encodeURIComponent(`Generate professional Amazon KDP book covers FREE in under 2 mins ðŸ“š\n${referralLink}`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 bg-sky-900/30 hover:bg-sky-900/50 border border-sky-700/40 text-sky-300 text-sm font-semibold py-3 rounded-xl transition"
                         >
-                          <span>𝕏</span> Post on X
+                          <span>ð•</span> Post on X
                         </a>
                       </div>
 
@@ -353,13 +348,13 @@ export default function RewardsClient() {
                           disabled={claimingPro}
                           className="w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:opacity-90 disabled:opacity-60 text-white font-black py-4 rounded-xl transition text-lg"
                         >
-                          {claimingPro ? 'Activating...' : '🚀 Claim Your Free Pro Plan →'}
+                          {claimingPro ? 'Activating...' : 'ðŸš€ Claim Your Free Pro Plan â†’'}
                         </button>
                       )}
 
                       {status.earnedPlan === 'PRO' && (
                         <div className="bg-green-950/30 border border-green-700/40 rounded-xl p-3 text-center">
-                          <p className="text-green-400 font-semibold text-sm">✅ Pro plan active — unlimited covers for 30 days</p>
+                          <p className="text-green-400 font-semibold text-sm">âœ… Pro plan active â€” unlimited covers for 30 days</p>
                         </div>
                       )}
                     </>
@@ -374,11 +369,11 @@ export default function RewardsClient() {
                 <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wider">How it works</h3>
                 <div className="space-y-3">
                   {[
-                    { step: '1', text: 'Click each social platform button above — it opens the page in a new tab' },
+                    { step: '1', text: 'Click each social platform button above â€” it opens the page in a new tab' },
                     { step: '2', text: 'Follow us on that platform, then come back and the follow is recorded automatically' },
-                    { step: '3', text: 'Follow all 4 → your Starter plan activates instantly (20 covers, 30 days)' },
+                    { step: '3', text: 'Follow all 4 â†’ your Starter plan activates instantly (20 covers, 30 days)' },
                     { step: '4', text: 'Share your referral link. Every friend who signs up counts toward your Pro unlock' },
-                    { step: '5', text: 'Reach 3 referrals → click "Claim Pro Plan" → unlimited covers for 30 days' },
+                    { step: '5', text: 'Reach 3 referrals â†’ click "Claim Pro Plan" â†’ unlimited covers for 30 days' },
                   ].map(item => (
                     <div key={item.step} className="flex gap-3 items-start">
                       <span className="w-6 h-6 rounded-full bg-violet-600/30 text-violet-300 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{item.step}</span>
@@ -397,3 +392,4 @@ export default function RewardsClient() {
     </>
   )
 }
+

@@ -28,7 +28,7 @@ export async function GET() {
 
   const followedPlatforms = user.socialFollowClaims.map(c => c.platform)
   const followCount = followedPlatforms.length
-  const allFollowed = followCount >= 4
+  const allFollowed = followCount >= 3
 
   // Check if earned plan is still active
   const earnedActive =
