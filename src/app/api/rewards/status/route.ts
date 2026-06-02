@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db/prisma'
 
 const REFERRALS_FOR_PRO = 3
@@ -7,6 +7,9 @@ const REFERRALS_FOR_PRO = 3
 export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const clerkUser = await currentUser()
+  const emailVerified = clerkUser?.emailAddresses?.some(e => e.verification?.status === 'verified') ?? false
 
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
@@ -40,6 +43,7 @@ export async function GET() {
   const starterUnlocked = allFollowed
 
   return NextResponse.json({
+    emailVerified,
     followedPlatforms,
     followCount,
     allFollowed,

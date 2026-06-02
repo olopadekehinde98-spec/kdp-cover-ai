@@ -27,6 +27,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks(.*)',
   '/api/referral',
   '/api/stats',
+  '/api/newsletter(.*)',
   '/api/test-pipeline',
 ])
 
@@ -46,6 +47,24 @@ try {
 // Named export (proxy) — Next.js 16 convention
 export async function proxy(req: NextRequest, event: NextFetchEvent) {
   const ip = extractIp(req)
+  const { pathname } = req.nextUrl
+
+  // ── Smart redirects ────────────────────────────────────────────────────────
+  // These are handled inside clerkHandler below via the isPublicRoute check,
+  // but we also do homepage→dashboard and /rewards→sign-up here.
+  // We read the session token from cookies to avoid an extra Clerk round-trip.
+  const sessionToken =
+    req.cookies.get('__session')?.value ||
+    req.cookies.get('__client_uat')?.value ||
+    req.headers.get('authorization')?.replace('Bearer ', '')
+  const likelySignedIn = !!sessionToken
+
+  if (likelySignedIn && pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+  if (!likelySignedIn && pathname.startsWith('/rewards')) {
+    return NextResponse.redirect(new URL('/sign-up?next=/rewards', req.url))
+  }
 
   // No Clerk keys configured → let everything through
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !clerkHandler) {
@@ -57,7 +76,6 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
   try {
     const res = await clerkHandler(req, event)
     if (res) {
-      // Attach IP header to the response
       const newRes = new NextResponse(res.body, res)
       newRes.headers.set('x-client-ip', ip)
       return newRes
@@ -66,7 +84,6 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
     fallback.headers.set('x-client-ip', ip)
     return fallback
   } catch {
-    // Clerk crashed on this request (e.g. misconfigured key) → don't 500 the whole site
     const res = NextResponse.next()
     res.headers.set('x-client-ip', ip)
     return res

@@ -1,18 +1,15 @@
-﻿'use client'
+'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useState, useRef } from 'react'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 
-// â”€â”€ Your social media pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SOCIAL_PLATFORMS = [
   {
     id: 'instagram',
     name: 'Instagram',
     handle: '@kdpcoverai.official',
-    icon: 'ðŸ“¸',
-    color: 'from-pink-600 to-purple-600',
+    icon: '📸',
     borderColor: 'border-pink-700/50',
     url: 'https://instagram.com/kdpcoverai.official',
   },
@@ -20,8 +17,7 @@ const SOCIAL_PLATFORMS = [
     id: 'youtube',
     name: 'YouTube',
     handle: '@KdpCoveraiofficial',
-    icon: 'â–¶ï¸',
-    color: 'from-red-700 to-red-900',
+    icon: '▶️',
     borderColor: 'border-red-700/50',
     url: 'https://youtube.com/@KdpCoveraiofficial',
   },
@@ -29,16 +25,18 @@ const SOCIAL_PLATFORMS = [
     id: 'tiktok',
     name: 'TikTok',
     handle: '@kdpcoverai_official',
-    icon: 'ðŸŽµ',
-    color: 'from-gray-800 to-gray-900',
+    icon: '🎵',
     borderColor: 'border-gray-600/50',
     url: 'https://tiktok.com/@kdpcoverai_official',
   },
 ]
 
+// Seconds user must wait on social page before they can confirm follow
+const FOLLOW_WAIT_SECONDS = 20
 const REFERRALS_FOR_PRO = 3
 
 interface Status {
+  emailVerified: boolean
   followedPlatforms: string[]
   followCount: number
   allFollowed: boolean
@@ -55,31 +53,55 @@ interface Status {
 export default function RewardsClient() {
   const [status, setStatus] = useState<Status | null>(null)
   const [loading, setLoading] = useState(true)
-  const [claiming, setClaiming] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [claimingPro, setClaimingPro] = useState(false)
+
+  // Per-platform timer state: null = not started, number = countdown seconds remaining, 0 = ready to confirm
+  const [timers, setTimers] = useState<Record<string, number | null>>({})
+  const [confirming, setConfirming] = useState<string | null>(null)
+  const timerRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({})
 
   async function loadStatus() {
     try {
       const res = await fetch('/api/rewards/status')
       if (res.ok) setStatus(await res.json())
-    } catch { /* not signed in */ }
+    } catch {}
     setLoading(false)
   }
 
   useEffect(() => { loadStatus() }, [])
 
+  // Clean up timers on unmount
+  useEffect(() => () => {
+    Object.values(timerRefs.current).forEach(clearInterval)
+  }, [])
+
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type })
-    setTimeout(() => setToast(null), 4000)
+    setTimeout(() => setToast(null), 5000)
   }
 
-  async function claimFollow(platform: string, url: string) {
-    // Open the social page in a new tab first
-    window.open(url, '_blank')
+  // Step 1: open social page + start countdown
+  function startFollow(platform: string, url: string) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    setTimers(t => ({ ...t, [platform]: FOLLOW_WAIT_SECONDS }))
 
-    // Wait a beat then record the claim
-    setClaiming(platform)
+    const interval = setInterval(() => {
+      setTimers(prev => {
+        const current = prev[platform]
+        if (typeof current !== 'number' || current <= 1) {
+          clearInterval(interval)
+          return { ...prev, [platform]: 0 }
+        }
+        return { ...prev, [platform]: current - 1 }
+      })
+    }, 1000)
+    timerRefs.current[platform] = interval
+  }
+
+  // Step 2: confirm they actually followed (timer must be 0)
+  async function confirmFollow(platform: string) {
+    setConfirming(platform)
     try {
       const res = await fetch('/api/rewards/follow', {
         method: 'POST',
@@ -87,18 +109,27 @@ export default function RewardsClient() {
         body: JSON.stringify({ platform }),
       })
       const data = await res.json()
-      if (!res.ok) { showToast(data.error || 'Something went wrong', 'error'); return }
+
+      if (!res.ok) {
+        if (data.code === 'EMAIL_NOT_VERIFIED') {
+          showToast('⚠️ Verify your email first — check your inbox for the verification link.', 'error')
+        } else {
+          showToast(data.error || 'Something went wrong', 'error')
+        }
+        return
+      }
 
       if (data.reward === 'starter_unlocked') {
-        showToast('ðŸŽ‰ Starter plan unlocked! You now have 20 covers for 30 days.')
+        showToast('🎉 All 3 followed! Starter plan is now active — 20 covers for 30 days.')
       } else {
-        showToast(`âœ“ ${platform} follow recorded! ${3 - data.followCount} more to go.`)
+        showToast(`✓ ${platform} follow confirmed! ${3 - data.followCount} more to go.`)
       }
+      setTimers(t => { const n = { ...t }; delete n[platform]; return n })
       await loadStatus()
     } catch {
       showToast('Something went wrong. Please try again.', 'error')
     } finally {
-      setClaiming(null)
+      setConfirming(null)
     }
   }
 
@@ -107,8 +138,15 @@ export default function RewardsClient() {
     try {
       const res = await fetch('/api/rewards/claim-pro', { method: 'POST' })
       const data = await res.json()
-      if (!res.ok) { showToast(data.error || 'Something went wrong', 'error'); return }
-      showToast('ðŸš€ Pro plan unlocked! Unlimited covers for 30 days!')
+      if (!res.ok) {
+        if (data.code === 'EMAIL_NOT_VERIFIED') {
+          showToast('⚠️ Verify your email address first before claiming Pro.', 'error')
+        } else {
+          showToast(data.error || 'Something went wrong', 'error')
+        }
+        return
+      }
+      showToast('🚀 Pro plan unlocked! Unlimited covers for 30 days!')
       await loadStatus()
     } catch {
       showToast('Something went wrong', 'error')
@@ -134,10 +172,8 @@ export default function RewardsClient() {
 
         {/* Toast */}
         {toast && (
-          <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl text-sm font-semibold shadow-2xl transition ${
-            toast.type === 'success'
-              ? 'bg-green-900 border border-green-700 text-green-100'
-              : 'bg-red-900 border border-red-700 text-red-100'
+          <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl text-sm font-semibold shadow-2xl max-w-sm text-center ${
+            toast.type === 'success' ? 'bg-green-900 border border-green-700 text-green-100' : 'bg-red-900 border border-red-700 text-red-100'
           }`}>
             {toast.msg}
           </div>
@@ -148,7 +184,7 @@ export default function RewardsClient() {
           {/* Header */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-violet-950/60 border border-violet-700/40 text-violet-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
-              ðŸŽ Free Plan Rewards
+              🎁 Free Plan Rewards
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
               Earn Free Plans.<br />
@@ -157,30 +193,38 @@ export default function RewardsClient() {
               </span>
             </h1>
             <p className="text-gray-400 text-lg max-w-xl mx-auto">
-              Support us on social media and we'll unlock premium features for free.
-              Two ways to earn â€” the more you do, the more you get.
+              Follow us on social media and refer friends to unlock premium features completely free.
             </p>
           </div>
 
-          {!loading && !status && (
-            <div className="text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
-              <p className="text-gray-400 mb-4">Sign in to start earning free plans</p>
-              <Link href="/sign-in" className="inline-flex bg-violet-600 hover:bg-violet-700 text-white font-bold px-6 py-3 rounded-xl transition">
-                Sign In â†’
-              </Link>
-            </div>
+          {loading && (
+            <div className="text-center text-gray-500 py-12">Loading your rewards...</div>
           )}
 
           {status && (
             <div className="space-y-6">
 
+              {/* Email verification warning */}
+              {!status.emailVerified && (
+                <div className="bg-amber-950/30 border border-amber-700/50 rounded-2xl p-5 flex items-start gap-4">
+                  <span className="text-2xl shrink-0">⚠️</span>
+                  <div>
+                    <p className="text-amber-300 font-bold mb-1">Verify your email to claim rewards</p>
+                    <p className="text-gray-400 text-sm">
+                      You must confirm your email address before any plan reward can be activated.
+                      Check your inbox for the verification email from KDP Cover AI.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Active earned plan banner */}
               {status.earnedPlan && status.earnedPlanExpiresAt && (
                 <div className="bg-green-950/30 border border-green-700/50 rounded-2xl p-5 flex items-center gap-4">
-                  <div className="text-3xl">ðŸŽ‰</div>
+                  <div className="text-3xl">🎉</div>
                   <div>
                     <p className="text-green-400 font-bold">
-                      {status.earnedPlan} plan active â€” earned for free!
+                      {status.earnedPlan} plan active — earned for free!
                     </p>
                     <p className="text-gray-400 text-sm">
                       Expires {new Date(status.earnedPlanExpiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -189,7 +233,7 @@ export default function RewardsClient() {
                 </div>
               )}
 
-              {/* â”€â”€ TIER 1: Social Follows â†’ Starter â”€â”€ */}
+              {/* ── TIER 1: Follow all 3 → Starter ── */}
               <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
                 <div className="px-6 pt-6 pb-4 border-b border-gray-800">
                   <div className="flex items-start justify-between gap-4">
@@ -198,9 +242,9 @@ export default function RewardsClient() {
                         <span className="bg-violet-600/20 text-violet-300 text-xs font-bold px-2 py-0.5 rounded-full">TIER 1</span>
                         <span className="text-gray-500 text-xs">Social follows</span>
                       </div>
-                      <h2 className="text-xl font-bold text-white">Follow us on all 4 platforms</h2>
+                      <h2 className="text-xl font-bold text-white">Follow us on all 3 platforms</h2>
                       <p className="text-gray-400 text-sm mt-1">
-                        Earn <span className="text-violet-300 font-semibold">Starter plan free for 30 days</span> â€” 20 covers, all features
+                        Earn <span className="text-violet-300 font-semibold">Starter plan free for 30 days</span> — 20 covers, all features
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -208,8 +252,6 @@ export default function RewardsClient() {
                       <p className="text-gray-500 text-xs">followed</p>
                     </div>
                   </div>
-
-                  {/* Progress bar */}
                   <div className="mt-4 h-2 bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-violet-600 to-pink-500 rounded-full transition-all duration-500"
@@ -218,58 +260,90 @@ export default function RewardsClient() {
                   </div>
                 </div>
 
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 space-y-3">
                   {SOCIAL_PLATFORMS.map(platform => {
                     const followed = status.followedPlatforms.includes(platform.id)
-                    const isLoading = claiming === platform.id
+                    const timerVal = timers[platform.id]
+                    const timerStarted = timerVal !== undefined && timerVal !== null
+                    const timerDone = timerVal === 0
+                    const isConfirming = confirming === platform.id
+
                     return (
-                      <button
-                        key={platform.id}
-                        onClick={() => !followed && claimFollow(platform.id, platform.url)}
-                        disabled={followed || !!claiming}
-                        className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border transition text-left ${
-                          followed
-                            ? 'bg-green-950/30 border-green-700/40 cursor-default'
-                            : `bg-gray-800 ${platform.borderColor} hover:bg-gray-750 cursor-pointer`
-                        }`}
-                      >
-                        <span className="text-2xl w-8 text-center">{followed ? 'âœ…' : platform.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className={`font-semibold text-sm ${followed ? 'text-green-400' : 'text-white'}`}>
-                            {platform.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {followed ? 'Followed âœ“' : isLoading ? 'Opening...' : 'Click to follow & mark done'}
-                          </p>
+                      <div key={platform.id} className={`rounded-xl border p-4 ${
+                        followed ? 'bg-green-950/20 border-green-700/40' : `bg-gray-800 ${platform.borderColor}`
+                      }`}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl w-8 text-center">{followed ? '✅' : platform.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-semibold text-sm ${followed ? 'text-green-400' : 'text-white'}`}>
+                              {platform.name}
+                              <span className="text-gray-500 font-normal ml-2 text-xs">{platform.handle}</span>
+                            </p>
+                            {followed && <p className="text-xs text-green-500">Followed ✓</p>}
+                            {!followed && !timerStarted && (
+                              <p className="text-xs text-gray-500">Click to open page → follow → confirm</p>
+                            )}
+                            {!followed && timerStarted && !timerDone && (
+                              <p className="text-xs text-amber-400">
+                                ⏳ Follow the page now — confirm available in {timerVal}s
+                              </p>
+                            )}
+                            {!followed && timerDone && (
+                              <p className="text-xs text-green-400">✓ Timer done — click "I Followed" to confirm</p>
+                            )}
+                          </div>
+
+                          {/* Action button */}
+                          {!followed && !timerStarted && (
+                            <button
+                              onClick={() => startFollow(platform.id, platform.url)}
+                              className="bg-violet-600 hover:bg-violet-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition shrink-0"
+                            >
+                              Open & Follow →
+                            </button>
+                          )}
+                          {!followed && timerStarted && !timerDone && (
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="w-10 h-10 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+                              <span className="text-amber-400 font-black text-lg w-6">{timerVal}</span>
+                            </div>
+                          )}
+                          {!followed && timerDone && (
+                            <button
+                              onClick={() => confirmFollow(platform.id)}
+                              disabled={isConfirming}
+                              className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold px-4 py-2 rounded-lg text-sm transition shrink-0"
+                            >
+                              {isConfirming ? 'Confirming...' : 'I Followed ✓'}
+                            </button>
+                          )}
                         </div>
-                        {!followed && (
-                          <span className="text-xs text-violet-400 font-bold shrink-0">Follow â†’</span>
+
+                        {/* Timer progress bar */}
+                        {!followed && timerStarted && !timerDone && typeof timerVal === 'number' && (
+                          <div className="mt-3 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-amber-500 rounded-full transition-all duration-1000"
+                              style={{ width: `${((FOLLOW_WAIT_SECONDS - timerVal) / FOLLOW_WAIT_SECONDS) * 100}%` }}
+                            />
+                          </div>
                         )}
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
 
-                {status.allFollowed && !status.earnedPlan && (
-                  <div className="px-4 pb-4">
-                    <div className="bg-violet-950/40 border border-violet-700/40 rounded-xl p-4 text-center">
-                      <p className="text-violet-300 font-semibold text-sm">
-                        ðŸŽ‰ All followed! Your Starter plan has been activated automatically.
-                      </p>
-                    </div>
+                {/* How it works note */}
+                <div className="px-5 pb-5">
+                  <div className="bg-gray-800/60 rounded-xl px-4 py-3 text-xs text-gray-500">
+                    <strong className="text-gray-400">How it works:</strong> Click "Open & Follow" → the page opens in a new tab →
+                    follow the account there → come back here and wait for the timer →
+                    click "I Followed" to confirm. All 3 platforms must be followed to unlock Starter.
                   </div>
-                )}
-
-                {status.allFollowed && status.earnedPlan === 'STARTER' && (
-                  <div className="px-4 pb-4">
-                    <div className="bg-green-950/30 border border-green-700/40 rounded-xl p-3 text-center">
-                      <p className="text-green-400 font-semibold text-sm">âœ… Starter plan active â€” 20 covers for 30 days</p>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
 
-              {/* â”€â”€ TIER 2: Referrals â†’ Pro â”€â”€ */}
+              {/* ── TIER 2: Referrals → Pro ── */}
               <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
                 <div className="px-6 pt-6 pb-4 border-b border-gray-800">
                   <div className="flex items-start justify-between gap-4">
@@ -280,7 +354,7 @@ export default function RewardsClient() {
                       </div>
                       <h2 className="text-xl font-bold text-white">Refer 3 friends who sign up</h2>
                       <p className="text-gray-400 text-sm mt-1">
-                        Earn <span className="text-pink-300 font-semibold">Pro plan free for 30 days</span> â€” unlimited covers, all features
+                        Earn <span className="text-pink-300 font-semibold">Pro plan free for 30 days</span> — unlimited covers
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -288,8 +362,6 @@ export default function RewardsClient() {
                       <p className="text-gray-500 text-xs">referred</p>
                     </div>
                   </div>
-
-                  {/* Progress bar */}
                   <div className="mt-4 h-2 bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-pink-600 to-orange-500 rounded-full transition-all duration-500"
@@ -302,7 +374,7 @@ export default function RewardsClient() {
                   {referralLink ? (
                     <>
                       <div>
-                        <p className="text-gray-400 text-sm mb-2">Your unique referral link â€” share this:</p>
+                        <p className="text-gray-400 text-sm mb-2">Your unique referral link — share this:</p>
                         <div className="flex gap-2">
                           <div className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-300 font-mono truncate">
                             {referralLink}
@@ -316,45 +388,42 @@ export default function RewardsClient() {
                         </div>
                       </div>
 
-                      {/* Share shortcuts */}
                       <div className="grid grid-cols-2 gap-2">
                         <a
-                          href={`https://wa.me/?text=${encodeURIComponent(`Generate professional Amazon KDP book covers in under 2 minutes â€” FREE!\n\n${referralLink}`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          href={`https://wa.me/?text=${encodeURIComponent(`Generate professional Amazon KDP book covers FREE in under 2 mins!\n\n${referralLink}`)}`}
+                          target="_blank" rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 bg-green-800/30 hover:bg-green-800/50 border border-green-700/40 text-green-300 text-sm font-semibold py-3 rounded-xl transition"
                         >
-                          <span>ðŸ’¬</span> Share on WhatsApp
+                          💬 Share on WhatsApp
                         </a>
                         <a
-                          href={`https://x.com/intent/tweet?text=${encodeURIComponent(`Generate professional Amazon KDP book covers FREE in under 2 mins ðŸ“š\n${referralLink}`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          href={`https://x.com/intent/tweet?text=${encodeURIComponent(`Get 5 FREE Amazon KDP book covers — no credit card!\n${referralLink}`)}`}
+                          target="_blank" rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 bg-sky-900/30 hover:bg-sky-900/50 border border-sky-700/40 text-sky-300 text-sm font-semibold py-3 rounded-xl transition"
                         >
-                          <span>ð•</span> Post on X
+                          𝕏 Post on X
                         </a>
                       </div>
 
                       {status.referralCount < REFERRALS_FOR_PRO && (
                         <p className="text-gray-500 text-xs text-center">
-                          {status.referralsNeeded} more friend{status.referralsNeeded !== 1 ? 's' : ''} need to sign up using your link to unlock Pro
+                          {status.referralsNeeded} more friend{status.referralsNeeded !== 1 ? 's' : ''} need to sign up using your link
                         </p>
                       )}
 
                       {status.proUnlocked && status.earnedPlan !== 'PRO' && (
                         <button
                           onClick={claimPro}
-                          disabled={claimingPro}
-                          className="w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:opacity-90 disabled:opacity-60 text-white font-black py-4 rounded-xl transition text-lg"
+                          disabled={claimingPro || !status.emailVerified}
+                          className="w-full bg-gradient-to-r from-pink-600 to-orange-500 hover:opacity-90 disabled:opacity-50 text-white font-black py-4 rounded-xl transition text-lg"
                         >
-                          {claimingPro ? 'Activating...' : 'ðŸš€ Claim Your Free Pro Plan â†’'}
+                          {claimingPro ? 'Activating...' : !status.emailVerified ? '⚠️ Verify email first' : '🚀 Claim Your Free Pro Plan →'}
                         </button>
                       )}
 
                       {status.earnedPlan === 'PRO' && (
                         <div className="bg-green-950/30 border border-green-700/40 rounded-xl p-3 text-center">
-                          <p className="text-green-400 font-semibold text-sm">âœ… Pro plan active â€” unlimited covers for 30 days</p>
+                          <p className="text-green-400 font-semibold text-sm">✅ Pro plan active — unlimited covers for 30 days</p>
                         </div>
                       )}
                     </>
@@ -364,32 +433,11 @@ export default function RewardsClient() {
                 </div>
               </div>
 
-              {/* How it works */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
-                <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wider">How it works</h3>
-                <div className="space-y-3">
-                  {[
-                    { step: '1', text: 'Click each social platform button above â€” it opens the page in a new tab' },
-                    { step: '2', text: 'Follow us on that platform, then come back and the follow is recorded automatically' },
-                    { step: '3', text: 'Follow all 4 â†’ your Starter plan activates instantly (20 covers, 30 days)' },
-                    { step: '4', text: 'Share your referral link. Every friend who signs up counts toward your Pro unlock' },
-                    { step: '5', text: 'Reach 3 referrals â†’ click "Claim Pro Plan" â†’ unlimited covers for 30 days' },
-                  ].map(item => (
-                    <div key={item.step} className="flex gap-3 items-start">
-                      <span className="w-6 h-6 rounded-full bg-violet-600/30 text-violet-300 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{item.step}</span>
-                      <p className="text-gray-400 text-sm">{item.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
             </div>
           )}
         </div>
-
         <SiteFooter />
       </div>
     </>
   )
 }
-

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db/prisma'
 
 const REFERRALS_FOR_PRO = 3
@@ -8,6 +8,16 @@ const PRO_REWARD_DAYS = 30
 export async function POST() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Sign in first' }, { status: 401 })
+
+  // Email must be verified
+  const clerkUser = await currentUser()
+  const emailVerified = clerkUser?.emailAddresses?.some(e => e.verification?.status === 'verified')
+  if (!emailVerified) {
+    return NextResponse.json({
+      error: 'Verify your email address first before claiming rewards.',
+      code: 'EMAIL_NOT_VERIFIED',
+    }, { status: 403 })
+  }
 
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
