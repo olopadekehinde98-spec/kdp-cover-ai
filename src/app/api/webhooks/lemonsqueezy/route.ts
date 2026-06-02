@@ -103,7 +103,7 @@ async function handleSubscriptionActive(event: LSEvent) {
       lsSubscriptionId: String(event.data?.id ?? ''),
       lsVariantId: String(attrs.variant_id ?? ''),
       subscriptionStatus: status === 'active' ? 'active' : status,
-      generationsLimit: planConfig?.generationsLimit ?? 3,
+      generationsLimit: planConfig?.generationsLimit ?? 5,
       generationsUsed: 0,
     },
   })
@@ -123,7 +123,7 @@ async function handleSubscriptionCancelled(event: LSEvent) {
       subscriptionStatus: 'canceled',
       lsSubscriptionId: null,
       lsVariantId: null,
-      generationsLimit: 3,
+      generationsLimit:   5,
     },
   })
 }

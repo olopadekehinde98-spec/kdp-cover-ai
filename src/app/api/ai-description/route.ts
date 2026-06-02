@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+﻿import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import OpenAI from 'openai'
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     )
   }
 
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const getOpenAI = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
   const { title, genre, authorName, description } = await req.json()
 
@@ -34,7 +34,7 @@ Genre: ${genre}
 ${description ? `Author's draft description: ${description}` : ''}
 
 Requirements:
-- 120–180 words
+- 120â€“180 words
 - Hook the reader in the first sentence
 - Build tension or curiosity appropriate for ${genre}
 - End with a compelling question or statement that makes the reader want to open the book
@@ -46,7 +46,7 @@ Requirements:
 Return only the description text, nothing else.`
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 300,
@@ -62,3 +62,4 @@ Return only the description text, nothing else.`
     return NextResponse.json({ error: 'AI generation failed. Check your OpenAI key.' }, { status: 500 })
   }
 }
+

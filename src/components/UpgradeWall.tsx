@@ -9,7 +9,7 @@ export default function UpgradeWall({ onClose }: { onClose: () => void }) {
         <button onClick={onClose} className="absolute top-3 right-4 text-gray-600 hover:text-gray-300 text-lg">✕</button>
 
         <div className="text-5xl mb-3">🚀</div>
-        <h2 className="text-2xl font-black text-white mb-2">You&apos;ve used all 3 free covers!</h2>
+        <h2 className="text-2xl font-black text-white mb-2">You&apos;ve used all 5 free covers!</h2>
         <p className="text-gray-400 text-sm mb-6">
           Your covers are great — now unlock unlimited generation. Use code <span className="text-violet-400 font-bold font-mono">UPGRADE20</span> for <strong className="text-white">20% off</strong> your first month.
         </p>

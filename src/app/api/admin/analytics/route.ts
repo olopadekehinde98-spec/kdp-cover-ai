@@ -117,7 +117,7 @@ async function getDbStats() {
 
   const [
     totalUsers, todaySignups, weekSignups, monthSignups,
-    planCounts, dailySignups, paidUsers, visitorCountries,
+    planCounts, dailySignups, paidUsers,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
@@ -132,14 +132,15 @@ async function getDbStats() {
       ORDER BY day ASC
     `,
     prisma.user.count({ where: { subscriptionStatus: 'active' } }),
-    prisma.visitorLog.groupBy({
-      by: ['country'],
-      _count: { _all: true },
-      orderBy: { _count: { country: 'desc' } },
-      take: 10,
-      where: { country: { not: null } },
-    }),
   ])
+  const visitorCountriesRaw = await prisma.visitorLog.groupBy({
+    by: ['country'],
+    _count: { _all: true },
+    orderBy: { _count: { country: 'desc' } },
+    take: 10,
+    where: { country: { not: null } },
+  })
+  const visitorCountries = visitorCountriesRaw.map(v => ({ country: v.country ?? 'Unknown', count: v._count._all }))
 
   const planMap: Record<string, number> = {}
   for (const p of planCounts) planMap[p.plan] = p._count._all
@@ -153,7 +154,7 @@ async function getDbStats() {
     paidUsers,
     conversionRate: totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0',
     dailySignups: dailySignups.map(d => ({ date: String(d.day).slice(0, 10), count: Number(d.count) })),
-    visitorCountries: visitorCountries.map(v => ({ country: v.country ?? 'Unknown', count: v._count._all })),
+    visitorCountries,
   }
 }
 

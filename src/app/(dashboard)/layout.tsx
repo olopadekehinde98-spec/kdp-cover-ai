@@ -57,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             name,
             imageUrl: clerkUser.imageUrl,
             plan: isOwner ? 'AGENCY' : 'FREE',
-            generationsLimit: isOwner ? 999999 : 3,
+            generationsLimit: isOwner ? 999999 : 5,
             subscriptionStatus: isOwner ? 'active' : 'free',
             referralCode: generateReferralCode(),
           },

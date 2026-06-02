@@ -15,7 +15,7 @@ const SECTIONS = [
     faqs: [
       {
         q: 'How do I generate my first cover?',
-        a: "Sign up (it's free — no credit card needed). You get 3 free covers. Click \"New Cover\" in your dashboard, enter your book details and trim size, type a prompt describing the look you want, then click Generate. Your full-wrap PDF is ready in under 60 seconds.",
+        a: "Sign up (it's free — no credit card needed). You get 5 free covers. Click \"New Cover\" in your dashboard, enter your book details and trim size, type a prompt describing the look you want, then click Generate. Your full-wrap PDF is ready in under 60 seconds.",
       },
       {
         q: 'What is a full-wrap cover?',

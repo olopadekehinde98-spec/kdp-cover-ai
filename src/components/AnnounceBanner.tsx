@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 const MESSAGES = [
-  '🔥 3 free covers today — no credit card, no catch',
+  '🔥 5 free covers today — no credit card, no catch',
   '✅ KDP-compliant dimensions auto-calculated every time',
   '⚡ Average generation time: 28 seconds',
   '📚 Every genre supported — thriller, romance, fantasy, self-help & more',

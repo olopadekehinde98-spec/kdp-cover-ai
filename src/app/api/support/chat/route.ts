@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db/prisma'
 import OpenAI from 'openai'
@@ -9,7 +9,7 @@ const SYSTEM_PROMPT = `You are KDP Cover AI's friendly support assistant. Help u
 function staticReply(lastMsg: string): string {
   const m = lastMsg.toLowerCase()
   if (m.includes('spine') || m.includes('width'))
-    return 'Spine width formula — B&W: 0.002252 × pages, Color: 0.002500 × pages, Premium Color: 0.002347 × pages. Our generator calculates this automatically. Type "create ticket" if you need help.'
+    return 'Spine width formula â€” B&W: 0.002252 Ã— pages, Color: 0.002500 Ã— pages, Premium Color: 0.002347 Ã— pages. Our generator calculates this automatically. Type "create ticket" if you need help.'
   if (m.includes('plan') || m.includes('price') || m.includes('cost') || m.includes('upgrade'))
     return 'Plans: Starter $9/mo (15 covers), Pro $29/mo (unlimited), Agency $79/mo (unlimited + priority). Visit /pricing. Type "create ticket" to talk to us.'
   if (m.includes('refund') || m.includes('cancel'))
@@ -17,7 +17,7 @@ function staticReply(lastMsg: string): string {
   if (m.includes('download') || m.includes('export') || m.includes('pdf'))
     return 'After generating, click Export and choose PDF (for KDP upload), PNG, or JPEG. You can also download the front cover, back cover, and spine separately.'
   if (m.includes('affiliate') || m.includes('referral') || m.includes('earn'))
-    return 'Affiliate program is free to join! Earn $3–$15 per referral. Go to /affiliate-dashboard for your referral link and earnings.'
+    return 'Affiliate program is free to join! Earn $3â€“$15 per referral. Go to /affiliate-dashboard for your referral link and earnings.'
   if (m.includes('generate') || m.includes('cover') || m.includes('create'))
     return 'Go to /generate, enter your book details (title, author, pages, paper type), describe the style you want, then click Generate. Your cover is ready in seconds!'
   return 'Thanks for reaching out! Type "create ticket" to open a support ticket and our team will get back to you within 24 hours.'
@@ -66,15 +66,15 @@ export async function POST(req: NextRequest) {
 
   const lastUserMsg = messages.filter((m: { role: string }) => m.role === 'user').at(-1)?.content ?? ''
 
-  // No OpenAI key → return smart static reply
+  // No OpenAI key â†’ return smart static reply
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ reply: staticReply(lastUserMsg) })
   }
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    const getOpenAI = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -95,3 +95,4 @@ export async function POST(req: NextRequest) {
     })
   }
 }
+

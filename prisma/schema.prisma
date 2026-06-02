@@ -46,7 +46,7 @@ model User {
   referralPaidOut      Boolean  @default(false)
   subscriptionStatus   String?  @default("inactive")
   generationsUsed      Int      @default(0)
-  generationsLimit     Int      @default(3)
+  generationsLimit     Int      @default(5)
   isBanned             Boolean  @default(false)
   isAdmin              Boolean  @default(false)
   ipAddress            String?

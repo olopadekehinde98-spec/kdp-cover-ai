@@ -37,7 +37,7 @@ export default function SignUpPage() {
                 { icon: '⚡', title: 'Instant Generation', desc: 'Full-wrap cover with front, spine & back in under 30 seconds' },
                 { icon: '📐', title: 'Exact KDP Dimensions', desc: '300 DPI, correct bleed, all trim sizes — ready to upload' },
                 { icon: '🎨', title: 'AI-Powered Design', desc: 'Describe your vision, our AI creates a professional cover' },
-                { icon: '🆓', title: 'Free to Start', desc: '3 free covers — no credit card required' },
+                { icon: '🆓', title: 'Free to Start', desc: '5 free covers — no credit card required' },
               ].map(f => (
                 <div key={f.title} className="flex gap-3">
                   <div className="w-10 h-10 bg-violet-600/20 border border-violet-700/40 rounded-xl flex items-center justify-center text-lg flex-shrink-0">{f.icon}</div>

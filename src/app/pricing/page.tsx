@@ -150,7 +150,7 @@ export default function PricingPage() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-gray-400 text-xl max-w-2xl mx-auto">
-            Start free with 3 covers. Upgrade when you&apos;re ready. Cancel anytime.
+            Start free with 5 covers. Upgrade when you&apos;re ready. Cancel anytime.
           </p>
           <div className="inline-flex items-center gap-2 mt-4 bg-green-950/40 border border-green-700/50 rounded-full px-4 py-2 text-sm">
             <span className="text-green-400 font-semibold">🎁 Use code <span className="font-mono font-black">UPGRADE20</span> for 20% off your first month</span>
@@ -316,7 +316,7 @@ export default function PricingPage() {
           <div>
             <h3 className="text-white font-semibold text-lg">Try It Free First</h3>
             <p className="text-gray-400 text-sm mt-1">
-              3 free covers, no credit card needed. Watermark on free exports.
+              5 free covers, no credit card needed. Watermark on free exports.
             </p>
           </div>
           <Link href="/sign-up"

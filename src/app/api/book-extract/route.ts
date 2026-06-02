@@ -1,8 +1,8 @@
-import { auth } from '@clerk/nextjs/server'
+﻿import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-// Simple PDF text extractor — works for most modern PDFs with embedded text
+// Simple PDF text extractor â€” works for most modern PDFs with embedded text
 function extractTextFromPDF(buffer: Buffer): string {
   try {
     const str = buffer.toString('latin1')
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   let rawText = ''
 
   try {
-    // Decode the base64 — may be raw base64 or a data URL
+    // Decode the base64 â€” may be raw base64 or a data URL
     const base64 = fileBase64.includes(',') ? fileBase64.split(',')[1] : fileBase64
     const buffer = Buffer.from(base64, 'base64')
     const ext = (fileName as string).split('.').pop()?.toLowerCase() ?? 'txt'
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         }, { status: 422 })
       }
     } else {
-      // TXT, DOCX (treat as text), EPUB — decode as UTF-8
+      // TXT, DOCX (treat as text), EPUB â€” decode as UTF-8
       rawText = buffer.toString('utf-8').replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 6000)
     }
   } catch (e) {
@@ -63,14 +63,14 @@ export async function POST(req: Request) {
   }
 
   // Ask OpenAI to extract info and write back cover description
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const getOpenAI = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
   const prompt = `You are a professional book editor. Read the following excerpt from a book manuscript and:
 
 1. Try to identify the book title (if visible in the text)
 2. Try to identify the author name (if visible in the text)
 3. Identify the genre
-4. Write a compelling 120–180 word back cover description that:
+4. Write a compelling 120â€“180 word back cover description that:
    - Hooks the reader in the first sentence
    - Builds tension/curiosity appropriate for the genre
    - Ends with a question or statement that makes the reader want to open the book
@@ -94,7 +94,7 @@ MANUSCRIPT EXCERPT:
 ${rawText.slice(0, 4000)}`
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 600,
@@ -116,3 +116,4 @@ ${rawText.slice(0, 4000)}`
     return NextResponse.json({ error: 'AI extraction failed. Check your OpenAI key.' }, { status: 500 })
   }
 }
+

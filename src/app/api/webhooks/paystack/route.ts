@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
           data: {
             plan:               'FREE',
             subscriptionStatus: 'cancelled',
-            generationsLimit:   3,
+            generationsLimit:   5,
             paystackSubCode:    null,
             paystackEmailToken: null,
             paystackPlanCode:   null,

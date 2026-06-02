@@ -57,7 +57,7 @@ export default function SignupPopup() {
             Generate Your First KDP Cover Free
           </h2>
           <p className="text-gray-400 text-sm leading-relaxed">
-            3 free covers · No credit card · KDP-ready PDF · 30 seconds
+            5 free covers · No credit card · KDP-ready PDF · 30 seconds
           </p>
         </div>
 

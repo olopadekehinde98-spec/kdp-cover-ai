@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db/prisma'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const getOpenAI = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const { context, discountPct, expiresInHours } = await req.json()
 
-  const completion = await openai.chat.completions.create({
+  const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{
       role: 'user',
@@ -36,7 +36,7 @@ Rules: memorable, relevant to books/writing/publishing, no special chars. Return
   const dc = await prisma.discountCode.create({
     data: {
       code,
-      description: `AI-generated: ${context || 'promotion'} — ${discountPct}% off`,
+      description: `AI-generated: ${context || 'promotion'} â€” ${discountPct}% off`,
       discountPct: Number(discountPct),
       expiresAt,
     },
@@ -44,3 +44,4 @@ Rules: memorable, relevant to books/writing/publishing, no special chars. Return
 
   return NextResponse.json(dc)
 }
+

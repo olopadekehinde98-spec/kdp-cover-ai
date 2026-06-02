@@ -83,7 +83,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
     where: { clerkId: userId },
     data: {
       subscriptionStatus: sub.status,
-      generationsLimit: planConfig?.generationsLimit ?? 3,
+      generationsLimit: planConfig?.generationsLimit ?? 5,
       ...(plan && { plan: plan as any }),
     },
   })
@@ -100,7 +100,7 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
       subscriptionStatus: 'canceled',
       stripeSubscriptionId: null,
       stripePriceId: null,
-      generationsLimit: 3,
+      generationsLimit:   5,
     },
   })
 }

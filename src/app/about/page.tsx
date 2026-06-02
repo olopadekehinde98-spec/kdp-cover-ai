@@ -195,7 +195,7 @@ export default function AboutPage() {
         {/* CTA */}
         <section className="max-w-2xl mx-auto px-6 py-16 text-center">
           <h2 className="text-3xl font-black text-white mb-4">Ready to generate your cover?</h2>
-          <p className="text-gray-400 mb-8">3 free covers to start. No credit card required. Print-ready PDF in under a minute.</p>
+          <p className="text-gray-400 mb-8">5 free covers to start. No credit card required. Print-ready PDF in under a minute.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/sign-up"
               className="inline-flex items-center justify-center bg-violet-600 hover:bg-violet-700 text-white font-bold px-8 py-4 rounded-xl transition text-lg">

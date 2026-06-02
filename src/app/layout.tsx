@@ -94,7 +94,7 @@ const jsonLd = {
   applicationCategory: 'DesignApplication',
   operatingSystem: 'Web',
   offers: [
-    { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD', description: '3 free covers' },
+    { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD', description: '5 free covers' },
     { '@type': 'Offer', name: 'Starter', price: '9', priceCurrency: 'USD', description: '15 covers per month' },
     { '@type': 'Offer', name: 'Pro', price: '29', priceCurrency: 'USD', description: 'Unlimited covers' },
     { '@type': 'Offer', name: 'Agency', price: '79', priceCurrency: 'USD', description: 'Unlimited + white-label' },
@@ -111,6 +111,7 @@ const jsonLd = {
 
 const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ''
+const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID || ''
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const content = (
@@ -120,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {/* Google Analytics — inline in <head> so it fires before page renders */}
+        {/* Google Analytics */}
         {GA_ID && (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
@@ -130,6 +131,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }}
             />
           </>
+        )}
+        {/* Microsoft Clarity — session recordings + heatmaps */}
+        {CLARITY_ID && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,"clarity","script","${CLARITY_ID}");`,
+            }}
+          />
         )}
       </head>
       <body className={`${inter.className} bg-gray-950 text-white antialiased min-h-screen`}>
