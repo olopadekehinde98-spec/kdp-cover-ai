@@ -8,6 +8,7 @@ import SupportChatBot from '@/components/SupportChatBot'
 import IpTracker from '@/components/IpTracker'
 import ReferralCapture from '@/components/ReferralCapture'
 import ExitIntentPopup from '@/components/ExitIntentPopup'
+import RewardsBanner from '@/components/RewardsBanner'
 
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -96,6 +97,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* ── Page content ───────────────────────────────── */}
       <main className="flex-1">
+        {/* Rewards banner — shown to FREE/STARTER users */}
+        {(user.plan === 'FREE' || user.plan === 'STARTER') && (
+          <div className="max-w-6xl mx-auto px-6 pt-4">
+            <RewardsBanner />
+          </div>
+        )}
         {children}
       </main>
 

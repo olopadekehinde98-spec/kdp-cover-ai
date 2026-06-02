@@ -53,6 +53,11 @@ model User {
   lastSeenAt           DateTime?
   newsletterOptIn      Boolean  @default(true)
   lastNewsletterAt     DateTime?
+
+  // Social reward system
+  earnedPlanExpiresAt  DateTime?   // when the free earned plan expires
+  earnedPlan           String?     // 'STARTER' | 'PRO' — earned via social/referral
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -61,6 +66,7 @@ model User {
   paymentSubmissions PaymentSubmission[]
   affiliateProfile   AffiliateProfile?
   siteRatings        SiteRating[]
+  socialFollowClaims SocialFollowClaim[]
 
   @@index([clerkId])
   @@index([email])
@@ -365,5 +371,17 @@ model DiscountRedemption {
   createdAt DateTime     @default(now())
 
   @@unique([codeId, userId])
+  @@index([userId])
+}
+
+// Social follow reward system
+model SocialFollowClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  String   // 'instagram' | 'tiktok' | 'twitter' | 'facebook'
+  claimedAt DateTime @default(now())
+
+  @@unique([userId, platform])
   @@index([userId])
 }
