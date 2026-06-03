@@ -37,11 +37,23 @@ const isPublicRoute = createRouteMatcher([
   '/api/test-pipeline(.*)',
 ])
 
-// Build the Clerk handler once at module load.
-// Wrap in try-catch so a missing key never crashes the module itself.
 let clerkHandler: ((req: NextRequest, event: NextFetchEvent) => Promise<Response>) | null = null
 try {
   clerkHandler = clerkMiddleware(async (auth, req) => {
+    const { userId } = await auth()
+    const { pathname } = req.nextUrl
+
+    // ── Signed-in user visits homepage → send to dashboard ──────────────────
+    if (userId && pathname === '/') {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
+
+    // ── /rewards requires login → redirect to sign-up ───────────────────────
+    if (!userId && pathname.startsWith('/rewards')) {
+      return NextResponse.redirect(new URL('/sign-up?next=/rewards', req.url))
+    }
+
+    // ── Protect all non-public routes ────────────────────────────────────────
     if (!isPublicRoute(req)) {
       await auth.protect()
     }
@@ -53,24 +65,6 @@ try {
 // Named export (proxy) — Next.js 16 convention
 export async function proxy(req: NextRequest, event: NextFetchEvent) {
   const ip = extractIp(req)
-  const { pathname } = req.nextUrl
-
-  // ── Smart redirects ────────────────────────────────────────────────────────
-  // These are handled inside clerkHandler below via the isPublicRoute check,
-  // but we also do homepage→dashboard and /rewards→sign-up here.
-  // We read the session token from cookies to avoid an extra Clerk round-trip.
-  const sessionToken =
-    req.cookies.get('__session')?.value ||
-    req.cookies.get('__client_uat')?.value ||
-    req.headers.get('authorization')?.replace('Bearer ', '')
-  const likelySignedIn = !!sessionToken
-
-  if (likelySignedIn && pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
-  }
-  if (!likelySignedIn && pathname.startsWith('/rewards')) {
-    return NextResponse.redirect(new URL('/sign-up?next=/rewards', req.url))
-  }
 
   // No Clerk keys configured → let everything through
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !clerkHandler) {
@@ -96,7 +90,6 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
   }
 }
 
-// Keep default export as well for backward compat
 export default proxy
 
 export const config = {
