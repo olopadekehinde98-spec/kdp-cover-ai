@@ -11,7 +11,7 @@ There are TWO Vercel projects. Always use the correct one:
 | `kdp-cover-ai` ✅ CORRECT | kdpcoverai.site | PRODUCTION — this is the live site |
 | `kdp-cover-ai-f1kw` ❌ WRONG | kdp-cover-ai-f1kw.vercel.app | Old/orphaned project — ignore |
 
-**The local `.vercel/project.json` is linked to `kdp-cover-ai` (correct).**
+**The local `.vercel/repo.json` is linked to `kdp-cover-ai` (correct). New Vercel CLI uses repo.json instead of project.json.**
 
 Before every deployment task, run the status check:
 ```powershell
