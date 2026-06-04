@@ -111,7 +111,7 @@ const jsonLd = {
 
 const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ''
-const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID || ''
+const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID || 'x1r90393av'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const content = (
