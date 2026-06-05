@@ -342,7 +342,7 @@ export default function PricingPage() {
             </thead>
             <tbody className="divide-y divide-gray-800">
               {[
-                ['Covers per month', '3 total', '15', 'Unlimited', 'Unlimited'],
+                ['Covers per month', '5 total', '20', 'Unlimited', 'Unlimited'],
                 ['PDF export', 'Watermark', '✓', '✓', '✓'],
                 ['All trim sizes', '✓', '✓', '✓', '✓'],
                 ['KDP-ready (no watermark)', '✗', '✓', '✓', '✓'],
