@@ -86,7 +86,7 @@ export async function createCheckoutUrl(
       amount:           PLANS[plan].amount[currency],
       currency,
       redirect_url:     `${appUrl}/dashboard?payment=success`,
-      payment_options:  'card',
+      payment_options:  'card,banktransfer,ussd,mobilemoney',
       customer: {
         email,
         name: userName,

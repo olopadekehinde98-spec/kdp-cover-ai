@@ -14,7 +14,7 @@ const PLANS = [
     price: 10,
     desc: 'Perfect for new authors',
     features: [
-      '15 covers per month',
+      '20 covers per month',
       'All trim sizes supported',
       'KDP-ready PDF export',
       'Email support',
@@ -117,13 +117,13 @@ export default function PricingPage() {
       return
     }
 
-    // Paystack card checkout (NGN)
+    // Flutterwave checkout — card, bank transfer, USSD, mobile money
     setLoading(plan)
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, provider: 'paystack', currency: 'NGN' }),
+        body: JSON.stringify({ plan, provider: 'flutterwave', currency: 'NGN' }),
       })
       const data = await res.json()
       if (data.url) {

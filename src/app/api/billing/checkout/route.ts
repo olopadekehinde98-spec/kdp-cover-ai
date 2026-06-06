@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  const { plan, provider = 'paystack', currency = 'NGN' } = parsed.data
+  const { plan, provider = 'flutterwave', currency = 'NGN' } = parsed.data
 
   try {
     if (provider === 'paystack') {
