@@ -132,6 +132,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 {[
                   { href: '/dashboard', label: 'Dashboard' },
                   { href: '/generate',  label: 'Generate Cover' },
+                  { href: '/interior',  label: 'Generate Interior' },
                   { href: '/history',   label: 'My Covers' },
                   { href: '/pricing',   label: 'Pricing' },
                 ].map(l => (

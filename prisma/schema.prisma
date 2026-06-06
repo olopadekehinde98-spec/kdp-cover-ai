@@ -62,6 +62,7 @@ model User {
   updatedAt     DateTime @updatedAt
 
   covers             Cover[]
+  interiors          Interior[]
   sessions           UserSession[]
   paymentSubmissions PaymentSubmission[]
   affiliateProfile   AffiliateProfile?
@@ -372,6 +373,33 @@ model DiscountRedemption {
 
   @@unique([codeId, userId])
   @@index([userId])
+}
+
+// KDP Interior pages
+model Interior {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title         String?           // optional title shown in header
+  template      String            // 'lined' | 'dotted' | 'blank' | 'graph' | 'planner-weekly' | 'planner-daily' | 'habit-tracker' | 'recipe'
+  trimSize      String            // '6x9' | '5x8' | '5.5x8.5' | '8.5x11' etc.
+  pageCount     Int
+  paperType     String            // 'black_and_white' | 'color'
+  lineSpacing   String?           // 'narrow' | 'medium' | 'wide'
+  hasHeader     Boolean  @default(false)
+  hasPageNumbers Boolean @default(true)
+  headerText    String?
+  primaryColor  String?           // hex e.g. '#7c3aed' — for colored decorations
+  customData    String?  @db.Text // JSON — template-specific extras (habit names etc.)
+
+  status        String   @default("PENDING") // PENDING | COMPLETED | FAILED
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 // Social follow reward system

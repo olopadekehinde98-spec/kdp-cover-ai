@@ -23,7 +23,8 @@ export default function DashboardNav({ plan, email, firstName }: Props) {
 
   const links = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/generate',  label: '✨ Generate' },
+    { href: '/generate',  label: '✨ Cover' },
+    { href: '/interior',  label: '📖 Interior' },
     { href: '/history',   label: 'My Covers' },
     { href: '/pricing',   label: 'Pricing' },
     { href: '/account',   label: 'Profile' },

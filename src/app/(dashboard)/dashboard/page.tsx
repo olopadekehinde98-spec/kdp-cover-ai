@@ -73,10 +73,16 @@ export default async function DashboardPage() {
             </h1>
             <p className="text-gray-400 mt-1">Generate, manage, and export your KDP covers.</p>
           </div>
-          <Link href="/generate"
-            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-3 rounded-xl transition">
-            ✨ New Cover
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/generate"
+              className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-5 py-3 rounded-xl transition">
+              ✨ New Cover
+            </Link>
+            <Link href="/interior"
+              className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-5 py-3 rounded-xl transition border border-gray-700">
+              📖 Interior
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
