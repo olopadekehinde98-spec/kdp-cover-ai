@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
 import { generateCoverImage } from '@/lib/ai-engine/generator'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logAppError } from '@/lib/error-log'
 
 export const maxDuration = 60
 import { calculateKDPDimensions } from '@/lib/kdp-engine/calculator'
@@ -234,11 +235,12 @@ export async function POST(req: NextRequest) {
       description,
     })
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
     await prisma.cover.update({
       where: { id: cover.id },
-      data: { status: 'FAILED' },
+      data: { status: 'FAILED', errorMessage: msg.slice(0, 1000) },
     })
-    const msg = err instanceof Error ? err.message : String(err)
+    logAppError({ route: '/api/generate', message: msg, userId: user.id, email: user.email })
     console.error('Generation error:', msg)
     return NextResponse.json({ error: `Generation failed: ${msg}` }, { status: 500 })
   }

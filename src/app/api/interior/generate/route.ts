@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
 import { generateInteriorPdf } from '@/lib/interior-engine/generator'
+import { logAppError } from '@/lib/error-log'
 import type { InteriorTemplate, LineSpacing } from '@/lib/interior-engine/types'
 
 export const maxDuration = 60
@@ -95,6 +96,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     await prisma.interior.update({ where: { id: interior.id }, data: { status: 'FAILED' } })
     const msg = err instanceof Error ? err.message : String(err)
+    logAppError({ route: '/api/interior/generate', message: msg, userId: user.id, email: user.email })
     console.error('Interior generation error:', msg)
     return NextResponse.json({ error: `Generation failed: ${msg}` }, { status: 500 })
   }

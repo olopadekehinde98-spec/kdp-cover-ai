@@ -104,6 +104,8 @@ model Cover {
   status          CoverStatus @default(PENDING)
   isFlagged       Boolean     @default(false)
   flagReason      String?
+  errorMessage    String?     @db.Text   // captured when generation/export fails — feeds bug detector
+  apologySentAt   DateTime?              // set when an apology email + bonus was sent for this failure
 
   generationCostUsd Float?
 
@@ -373,6 +375,21 @@ model DiscountRedemption {
 
   @@unique([codeId, userId])
   @@index([userId])
+}
+
+// Captures any user-facing error so the AI bug detector can spot patterns
+model ErrorLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  email       String?
+  route       String              // e.g. '/api/generate', '/api/export', '/api/interior/generate'
+  message     String   @db.Text
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([route])
+  @@index([resolved])
+  @@index([createdAt])
 }
 
 // KDP Interior pages

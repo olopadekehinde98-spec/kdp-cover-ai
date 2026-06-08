@@ -94,6 +94,37 @@ export function newsletterEmail(opts: {
   `)
 }
 
+export function apologyBonusEmail(opts: { name: string; bonusCount: number }): string {
+  return layout(`
+    <h1 style="margin:0 0 12px;font-size:22px;color:#ffffff;">We're sorry, ${opts.name} 🙏</h1>
+    <p style="color:#d1d5db;margin:0 0 16px;">
+      We noticed one of your recent cover generations didn't complete the way it should have.
+      That's on us — and we've already shipped a fix.
+    </p>
+    <p style="color:#d1d5db;margin:0 0 20px;">
+      As an apology, we've added <strong style="color:#ffffff;">${opts.bonusCount} extra free generations</strong> to your account — no strings attached.
+    </p>
+    <a href="${SITE_URL}/generate" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:bold;font-size:16px;">Try Again — It's On Us →</a>
+    <p style="color:#9ca3af;font-size:13px;margin:24px 0 0;">
+      If it happens again, just reply to this email with what you were creating — we read every message and fix issues fast.
+    </p>
+  `)
+}
+
+export function generalApologyEmail(opts: { name: string; bonusCount: number }): string {
+  return layout(`
+    <h1 style="margin:0 0 12px;font-size:22px;color:#ffffff;">A small thank-you, ${opts.name} 🎁</h1>
+    <p style="color:#d1d5db;margin:0 0 16px;">
+      We've been improving KDP Cover AI behind the scenes — faster generations, better covers, and a smoother experience overall.
+    </p>
+    <p style="color:#d1d5db;margin:0 0 20px;">
+      To say thanks for being with us, we've added <strong style="color:#ffffff;">${opts.bonusCount} extra free generations</strong> to your account.
+    </p>
+    <a href="${SITE_URL}/generate" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:bold;font-size:16px;">Create Your Next Cover →</a>
+    <p style="color:#9ca3af;font-size:13px;margin:24px 0 0;">Thanks for being part of KDP Cover AI. Reply to this email anytime — we read every message.</p>
+  `)
+}
+
 export function confirmSubscriberEmail(token: string): string {
   return layout(`
     <h1 style="margin:0 0 12px;font-size:22px;color:#ffffff;">Confirm Your Email 📬</h1>

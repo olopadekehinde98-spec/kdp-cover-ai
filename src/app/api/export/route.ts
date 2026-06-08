@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
 import { generateKDPPdf, validateExport } from '@/lib/export-engine/pdf-generator'
+import { logAppError } from '@/lib/error-log'
 
 export const maxDuration = 60
 import { calculateKDPDimensions } from '@/lib/kdp-engine/calculator'
@@ -208,6 +209,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
+    logAppError({ route: '/api/export', message: msg, userId: user.id, email: user.email })
     console.error('Export error:', msg)
     return NextResponse.json({ error: `Export failed: ${msg}` }, { status: 500 })
   }

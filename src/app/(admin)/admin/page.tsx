@@ -48,6 +48,7 @@ export default async function AdminDashboard() {
             <Link href="/admin/analytics" className="text-gray-400 hover:text-white text-violet-400 font-medium">📊 Analytics</Link>
             <Link href="/admin/discounts" className="text-gray-400 hover:text-white">🎟️ Discounts</Link>
             <Link href="/admin/non-subscribers" className="text-gray-400 hover:text-white">👥 Non-Subscribers</Link>
+            <Link href="/admin/bug-detector" className="text-gray-400 hover:text-white">🐛 Bug Detector</Link>
           </div>
         </div>
         <Link href="/dashboard" className="text-xs text-gray-500 hover:text-gray-300">← Back to app</Link>
