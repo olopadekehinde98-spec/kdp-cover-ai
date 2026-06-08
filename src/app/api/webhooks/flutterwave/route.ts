@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { verifyFlutterwaveWebhook } from '@/lib/flutterwave/client'
 import { getCommissionAmount, getCommissionRate } from '@/lib/affiliate'
+import { logAppError } from '@/lib/error-log'
 
 const PLAN_LIMITS: Record<string, number> = {
   STARTER: 20,
@@ -158,6 +159,8 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error('Flutterwave webhook error:', err)
+    const msg = err instanceof Error ? err.message : String(err)
+    logAppError({ route: '/api/webhooks/flutterwave', message: msg })
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
   }
 

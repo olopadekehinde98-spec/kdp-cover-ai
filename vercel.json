@@ -1,1 +1,1 @@
-{"headers":[{"source":"/api/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},{"source":"/(dashboard|admin|rate|generate|history|account)(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]}]}
+{"headers":[{"source":"/api/(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]},{"source":"/(dashboard|admin|rate|generate|history|account)(.*)","headers":[{"key":"Cache-Control","value":"no-store, max-age=0"}]}],"crons":[{"path":"/api/cron/bug-report","schedule":"0 9 * * 1"}]}

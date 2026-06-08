@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
 import { type PlanKey as PaddlePlanKey } from '@/lib/paddle/client'
+import { logAppError } from '@/lib/error-log'
 
 const schema = z.object({
   plan: z.enum(['STARTER', 'PRO', 'AGENCY']),
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Checkout error:', msg)
+    logAppError({ route: '/api/billing/checkout', message: msg, userId: user.id, email: user.email })
     return NextResponse.json({ error: msg, detail: msg }, { status: 500 })
   }
 }

@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 
 interface PatternGroup {
+  fingerprint: string
   route: string
   sample: string
   count: number
   affectedUsers: number
   fixed: boolean
+  note: string | null
 }
 
 interface AnalysisResponse {
@@ -24,6 +26,7 @@ export default function BugDetectorPage() {
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [togglingFingerprint, setTogglingFingerprint] = useState<string | null>(null)
 
   // Apology bonus controls
   const [audience, setAudience] = useState<'failed' | 'all'>('failed')
@@ -48,6 +51,25 @@ export default function BugDetectorPage() {
   }, [])
 
   useEffect(() => { loadAnalysis() }, [loadAnalysis])
+
+  async function togglePatternFixed(p: PatternGroup) {
+    setTogglingFingerprint(p.fingerprint)
+    try {
+      const res = await fetch('/api/admin/bug-pattern-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fingerprint: p.fingerprint, route: p.route, resolved: !p.fixed }),
+      })
+      if (res.ok) {
+        setAnalysis(prev => prev ? {
+          ...prev,
+          topPatterns: prev.topPatterns.map(g => g.fingerprint === p.fingerprint ? { ...g, fixed: !p.fixed } : g),
+        } : prev)
+      }
+    } finally {
+      setTogglingFingerprint(null)
+    }
+  }
 
   async function runDryRun() {
     setPreview(null)
@@ -163,19 +185,41 @@ export default function BugDetectorPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-900 text-gray-400 text-left">
+                        <th className="px-4 py-3 font-medium">Status</th>
                         <th className="px-4 py-3 font-medium">Route</th>
                         <th className="px-4 py-3 font-medium">Sample message</th>
                         <th className="px-4 py-3 font-medium text-right">Occurrences</th>
                         <th className="px-4 py-3 font-medium text-right">Users affected</th>
+                        <th className="px-4 py-3 font-medium text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {analysis.topPatterns.map((p, i) => (
                         <tr key={i} className="border-t border-gray-800 text-gray-200">
+                          <td className="px-4 py-3">
+                            {p.fixed ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-950/50 text-green-300 border border-green-800/40">✅ Fixed</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-950/50 text-red-300 border border-red-800/40">🔴 Open</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 font-mono text-xs text-violet-300">{p.route}</td>
                           <td className="px-4 py-3 text-gray-400 text-xs max-w-md truncate" title={p.sample}>{p.sample}</td>
                           <td className="px-4 py-3 text-right">{p.count}</td>
                           <td className="px-4 py-3 text-right">{p.affectedUsers}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => togglePatternFixed(p)}
+                              disabled={togglingFingerprint === p.fingerprint}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border disabled:opacity-50 ${
+                                p.fixed
+                                  ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 border-gray-700'
+                                  : 'bg-green-900/30 hover:bg-green-900/50 text-green-300 border-green-800/50'
+                              }`}
+                            >
+                              {togglingFingerprint === p.fingerprint ? '…' : p.fixed ? 'Mark as open' : 'Mark as fixed'}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

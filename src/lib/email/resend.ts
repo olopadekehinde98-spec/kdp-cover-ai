@@ -125,6 +125,52 @@ export function generalApologyEmail(opts: { name: string; bonusCount: number }):
   `)
 }
 
+export function weeklyBugReportEmail(opts: {
+  windowDays: number
+  totalErrorEvents: number
+  uniquePatterns: number
+  openCount: number
+  topPatterns: Array<{ route: string; sample: string; count: number; affectedUsers: number; fixed: boolean }>
+  aiSummary: string | null
+}): string {
+  const rows = opts.topPatterns.slice(0, 10).map(p => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #374151;font-family:monospace;font-size:12px;color:#a78bfa;white-space:nowrap;">${p.route}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #374151;font-size:12px;color:#9ca3af;">${p.sample.slice(0, 90)}${p.sample.length > 90 ? '…' : ''}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #374151;font-size:12px;color:#e5e7eb;text-align:right;">${p.count}</td>
+      <td style="padding:10px 0 10px 12px;border-bottom:1px solid #374151;font-size:12px;text-align:center;">${p.fixed ? '✅' : '🔴'}</td>
+    </tr>
+  `).join('')
+
+  const aiBlock = opts.aiSummary ? `
+    <div style="background:#1e1b4b;border:1px solid #4c1d95;border-radius:10px;padding:16px;margin:0 0 24px;">
+      <p style="color:#c4b5fd;font-weight:bold;margin:0 0 8px;">🤖 AI Diagnosis</p>
+      <pre style="color:#ddd6fe;margin:0;font-size:13px;white-space:pre-wrap;font-family:inherit;">${opts.aiSummary}</pre>
+    </div>
+  ` : ''
+
+  return layout(`
+    <h1 style="margin:0 0 8px;font-size:22px;color:#ffffff;">🐛 Weekly Bug Report</h1>
+    <p style="color:#9ca3af;margin:0 0 24px;font-size:14px;">Last ${opts.windowDays} days · ${opts.totalErrorEvents} error events · ${opts.uniquePatterns} patterns · ${opts.openCount} still open</p>
+
+    ${aiBlock}
+
+    <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:0 0 8px;font-size:11px;color:#6b7280;text-transform:uppercase;">Route</th>
+          <th style="text-align:left;padding:0 0 8px 12px;font-size:11px;color:#6b7280;text-transform:uppercase;">Sample</th>
+          <th style="text-align:right;padding:0 0 8px;font-size:11px;color:#6b7280;text-transform:uppercase;">Count</th>
+          <th style="text-align:center;padding:0 0 8px 12px;font-size:11px;color:#6b7280;text-transform:uppercase;">Fixed?</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <a href="${SITE_URL}/admin/bug-detector" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:bold;font-size:16px;">Open Bug Detector →</a>
+  `)
+}
+
 export function confirmSubscriberEmail(token: string): string {
   return layout(`
     <h1 style="margin:0 0 12px;font-size:22px;color:#ffffff;">Confirm Your Email 📬</h1>
