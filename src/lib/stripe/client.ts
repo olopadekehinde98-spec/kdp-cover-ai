@@ -29,7 +29,7 @@ export const PLANS = {
     priceId: process.env.STRIPE_STARTER_PRICE_ID ?? '',
     generationsLimit: 15,
     features: [
-      '15 covers per month',
+      '20 covers per month',
       'All trim sizes',
       'PDF export',
       'Watermark preview',

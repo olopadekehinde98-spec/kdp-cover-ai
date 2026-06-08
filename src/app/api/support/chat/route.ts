@@ -11,7 +11,7 @@ function staticReply(lastMsg: string): string {
   if (m.includes('spine') || m.includes('width'))
     return 'Spine width formula â€” B&W: 0.002252 Ã— pages, Color: 0.002500 Ã— pages, Premium Color: 0.002347 Ã— pages. Our generator calculates this automatically. Type "create ticket" if you need help.'
   if (m.includes('plan') || m.includes('price') || m.includes('cost') || m.includes('upgrade'))
-    return 'Plans: Starter $9/mo (15 covers), Pro $29/mo (unlimited), Agency $79/mo (unlimited + priority). Visit /pricing. Type "create ticket" to talk to us.'
+    return 'Plans: Starter $9/mo (20 covers), Pro $29/mo (unlimited), Agency $79/mo (unlimited + priority). Visit /pricing. Type "create ticket" to talk to us.'
   if (m.includes('refund') || m.includes('cancel'))
     return 'Refunds are available within 7 days if you haven\'t used cover generation. See /refund for the full policy, or type "create ticket" to request one.'
   if (m.includes('download') || m.includes('export') || m.includes('pdf'))

@@ -29,7 +29,7 @@ export const PLANS = {
     variantId: () => process.env.LS_VARIANT_STARTER ?? '',
     generationsLimit: 15,
     features: [
-      '15 covers per month',
+      '20 covers per month',
       'All trim sizes',
       'KDP-ready PDF export',
       'Email support',

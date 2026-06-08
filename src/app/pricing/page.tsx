@@ -129,12 +129,15 @@ export default function PricingPage() {
       if (data.url) {
         window.location.href = data.url
       } else if (res.status === 401) {
-        router.push('/sign-up')
+        // Someone clicking "Subscribe" likely already has a free account —
+        // send them to sign-in (Clerk's sign-in page also links to sign-up
+        // for anyone who genuinely is new).
+        router.push(`/sign-in?redirect_url=${encodeURIComponent('/pricing')}`)
       } else {
         alert(`Error: ${data.error || data.detail || 'Something went wrong. Please try again.'}`)
       }
     } catch {
-      router.push('/sign-up')
+      router.push(`/sign-in?redirect_url=${encodeURIComponent('/pricing')}`)
     } finally {
       setLoading(null)
     }

@@ -95,7 +95,7 @@ const jsonLd = {
   operatingSystem: 'Web',
   offers: [
     { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD', description: '5 free covers' },
-    { '@type': 'Offer', name: 'Starter', price: '9', priceCurrency: 'USD', description: '15 covers per month' },
+    { '@type': 'Offer', name: 'Starter', price: '9', priceCurrency: 'USD', description: '20 covers per month' },
     { '@type': 'Offer', name: 'Pro', price: '29', priceCurrency: 'USD', description: 'Unlimited covers' },
     { '@type': 'Offer', name: 'Agency', price: '79', priceCurrency: 'USD', description: 'Unlimited + white-label' },
   ],

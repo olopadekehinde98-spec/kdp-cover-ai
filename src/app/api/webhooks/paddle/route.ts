@@ -4,7 +4,7 @@ import { verifyPaddleWebhook } from '@/lib/paddle/client'
 import { getCommissionAmount, getCommissionRate } from '@/lib/affiliate'
 
 const PLAN_LIMITS: Record<string, number> = {
-  STARTER: 15,
+  STARTER: 20,
   PRO:     999999,
   AGENCY:  999999,
 }

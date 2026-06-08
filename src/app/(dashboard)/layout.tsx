@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   let user = await prisma.user.findUnique({
     where: { clerkId: userId },
-    select: { plan: true, email: true, isBanned: true },
+    select: { plan: true, email: true, isBanned: true, generationsLimit: true },
   })
 
   // Auto-create user in DB if webhook hasn't fired yet
@@ -70,11 +70,26 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     user = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { plan: true, email: true, isBanned: true },
+      select: { plan: true, email: true, isBanned: true, generationsLimit: true },
     })
   }
 
   if (!user) redirect('/sign-in')
+
+  // Self-heal: the owner account should always be AGENCY with unlimited generations.
+  // (Older records — e.g. ones created before this rule, or ones whose plan was
+  // changed via an admin action that didn't also update the limit — could be
+  // stuck on a stale generationsLimit like 20 even though plan says AGENCY.)
+  if (
+    user.email === process.env.OWNER_EMAIL &&
+    (user.plan !== 'AGENCY' || user.generationsLimit !== 999999 || user.isBanned)
+  ) {
+    await prisma.user.update({
+      where: { email: user.email },
+      data: { plan: 'AGENCY', generationsLimit: 999999, subscriptionStatus: 'active', isBanned: false },
+    })
+    user = { ...user, plan: 'AGENCY', generationsLimit: 999999, isBanned: false }
+  }
 
   // Redirect banned users — but not if they're already on the banned page
   if (user.isBanned) redirect('/banned')

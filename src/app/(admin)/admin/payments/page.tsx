@@ -248,7 +248,7 @@ export default function AdminPaymentsPage() {
                       onChange={e => setOverridePlan(e.target.value)}
                       className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
                     >
-                      <option value="STARTER">STARTER — 15 generations</option>
+                      <option value="STARTER">STARTER — 20 generations</option>
                       <option value="PRO">PRO — Unlimited</option>
                       <option value="AGENCY">AGENCY — Unlimited + White-label</option>
                     </select>

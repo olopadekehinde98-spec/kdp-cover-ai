@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { z } from 'zod'
 
+const PLAN_LIMITS: Record<string, number> = {
+  FREE:    5,
+  STARTER: 20,
+  PRO:     999999,
+  AGENCY:  999999,
+}
+
 async function requireAdmin() {
   const { userId } = await auth()
   if (!userId) return null
@@ -30,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let data: Record<string, unknown> = {}
   if (action === 'ban') data = { isBanned: true }
   if (action === 'unban') data = { isBanned: false }
-  if (action === 'setPlan' && plan) data = { plan }
+  if (action === 'setPlan' && plan) data = { plan, generationsLimit: PLAN_LIMITS[plan] }
   if (action === 'setLimit' && limit !== undefined) data = { generationsLimit: limit }
 
   const updated = await prisma.user.update({ where: { id }, data })

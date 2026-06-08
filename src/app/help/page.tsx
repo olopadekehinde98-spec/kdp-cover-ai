@@ -92,7 +92,7 @@ const SECTIONS = [
     faqs: [
       {
         q: 'What are the plan prices?',
-        a: 'Starter: $9/month (15 covers). Pro: $29/month (unlimited). Agency: $79/month (unlimited + team + priority). All paid plans include KDP-ready PDF export with no watermark and commercial use rights.',
+        a: 'Starter: $9/month (20 covers). Pro: $29/month (unlimited). Agency: $79/month (unlimited + team + priority). All paid plans include KDP-ready PDF export with no watermark and commercial use rights.',
       },
       {
         q: 'How do I upgrade my plan?',

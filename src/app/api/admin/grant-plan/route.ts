@@ -6,10 +6,10 @@ import { prisma } from '@/lib/db/prisma'
 // This updates the user's plan and generation limits in the DB.
 
 const PLAN_LIMITS: Record<string, number> = {
-  STARTER: 15,
+  STARTER: 20,
   PRO:     999999,
   AGENCY:  999999,
-  FREE:    3,
+  FREE:    5,
 }
 
 export async function POST(req: Request) {

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     // Owner email gets AGENCY plan automatically
     const isOwner = email === process.env.OWNER_EMAIL
     const plan = isOwner ? 'AGENCY' : 'FREE'
-    const generationsLimit = isOwner ? 999999 : 3
+    const generationsLimit = isOwner ? 999999 : 5 // matches the "5 free covers" promised across all marketing copy
 
     const existing = await prisma.user.findFirst({ where: { clerkId: data.id } })
     if (existing) {
